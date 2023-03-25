@@ -19,7 +19,7 @@ import { useRouter } from 'next/router';
 const inter = Inter({ subsets: ['latin'] });
 
 const REDIRECT_URI =
-  process.env.REACT_APP_REDIRECT_URI || 'http://localhost:3000';
+  process.env.NEXT_PUBLIC_REDIRECT_URI || 'http://localhost:3000';
 
 const Views = {
   SIGN_IN: 'sign_in',
@@ -89,16 +89,11 @@ export default function Home() {
       const morePKPs = [...pkps, newPKP];
       setPKPs(morePKPs);
 
-      // Set current PKP to new PKP
-      setCurrentPKP(newPKP);
-
       setView(Views.MINTED);
       setView(Views.CREATING_SESSION);
 
       // Get session sigs for new PKP
-      await createSession(newPKP.publicKey);
-
-      setView(Views.SESSION_CREATED);
+      await createSession(newPKP);
     } catch (err) {
       setError(err);
       setView(Views.ERROR);
@@ -108,9 +103,9 @@ export default function Home() {
   /**
    * Generate session sigs for current PKP
    *
-   * @param {string} pkpPublicKey - Public key of PKP to create session for
+   * @param {Object} PKP - PKP object
    */
-  async function createSession(pkpPublicKey) {
+  async function createSession(pkp) {
     setView(Views.CREATING_SESSION);
 
     try {
@@ -123,7 +118,7 @@ export default function Home() {
       ];
       const authNeededCallback = getDefaultAuthNeededCallback(
         authMethods,
-        pkpPublicKey
+        pkp.publicKey
       );
 
       // Get session signatures
@@ -132,6 +127,7 @@ export default function Home() {
         resources: [`litAction://*`],
         authNeededCallback: authNeededCallback,
       });
+      setCurrentPKP(pkp);
       setSessionSigs(sessionSigs);
 
       setView(Views.SESSION_CREATED);
@@ -284,7 +280,7 @@ export default function Home() {
                   {pkps.map(pkp => (
                     <button
                       key={pkp.ethAddress}
-                      onClick={async () => await createSession(pkp.publicKey)}
+                      onClick={async () => await createSession(pkp)}
                     >
                       {pkp.ethAddress}
                     </button>
