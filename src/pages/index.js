@@ -39,7 +39,7 @@ export default function Home() {
 
   const [litNodeClient, setLitNodeClient] = useState();
   const [googleIdToken, setGoogleIdToken] = useState();
-  const [pkps, setPKPs] = useState();
+  const [pkps, setPKPs] = useState([]);
   const [currentPKP, setCurrentPKP] = useState();
   const [sessionSigs, setSessionSigs] = useState();
 
@@ -86,7 +86,7 @@ export default function Home() {
       const newPKP = await mintGooglePKP(googleIdToken);
 
       // Add new PKP to list of PKPs
-      const morePKPs = [...pkps, newPKP];
+      const morePKPs = pkps.push(newPKP);
       setPKPs(morePKPs);
 
       setView(Views.MINTED);
