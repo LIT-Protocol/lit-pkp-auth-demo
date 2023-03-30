@@ -3,50 +3,69 @@ import Image from 'next/image';
 import { Inter } from 'next/font/google';
 import { useCallback, useEffect, useState } from 'react';
 import { LitNodeClient } from '@lit-protocol/lit-node-client';
+import {
+  LitAuthClient,
+  getSocialAuthNeededCallback,
+} from '@lit-protocol/lit-auth-client';
+import { IRelayPKP, AuthMethod } from '@lit-protocol/types';
 import { ethers } from 'ethers';
-import {
-  getLoginUrl,
-  isSignInRedirect,
-  handleSignInRedirect,
-} from '@/utils/auth';
-import {
-  fetchPKPs,
-  mintPKP,
-  pollRequestUntilTerminalState,
-} from '@/utils/relay';
 import { useRouter } from 'next/router';
 
 const inter = Inter({ subsets: ['latin'] });
 
-const REDIRECT_URI =
-  process.env.NEXT_PUBLIC_REDIRECT_URI || 'http://localhost:3000';
+enum Views {
+  SIGN_IN = 'sign_in',
+  HANDLE_REDIRECT = 'handle_redirect',
+  FETCHING = 'fetching',
+  FETCHED = 'fetched',
+  MINTING = 'minting',
+  MINTED = 'minted',
+  CREATING_SESSION = 'creating_session',
+  SESSION_CREATED = 'session_created',
+  ERROR = 'error',
+}
 
-const Views = {
-  SIGN_IN: 'sign_in',
-  FETCHING: 'fetching',
-  FETCHED: 'fetched',
-  MINTING: 'minting',
-  MINTED: 'minted',
-  CREATING_SESSION: 'creating_session',
-  SESSION_CREATED: 'session_created',
-  ERROR: 'error',
-};
+interface SessionSigs {
+  /**
+   * Map of Lit node urls to session signatures
+   */
+  [key: string]: SessionSig;
+}
+
+interface SessionSig {
+  sig: string;
+  derivedVia: string;
+  signedMessage: string;
+  address: string;
+  algo: string;
+}
 
 export default function Home() {
   const router = useRouter();
-  const [view, setView] = useState(Views.SIGN_IN);
-  const [error, setError] = useState();
 
-  const [litNodeClient, setLitNodeClient] = useState();
-  const [googleIdToken, setGoogleIdToken] = useState();
-  const [pkps, setPKPs] = useState([]);
-  const [currentPKP, setCurrentPKP] = useState();
-  const [sessionSigs, setSessionSigs] = useState();
+  const [view, setView] = useState<Views>(Views.SIGN_IN);
+  const [error, setError] = useState<any>();
 
-  const [message, setMessage] = useState('Free the web!');
-  const [signature, setSignature] = useState(null);
-  const [recoveredAddress, setRecoveredAddress] = useState(null);
-  const [verified, setVerified] = useState(false);
+  const [litAuthClient, setLitAuthClient] = useState<LitAuthClient>();
+  const [litNodeClient, setLitNodeClient] = useState<LitNodeClient>();
+  const [authMethod, setAuthMethod] = useState<AuthMethod>();
+  const [pkps, setPKPs] = useState<IRelayPKP[]>([]);
+  const [currentPKP, setCurrentPKP] = useState<IRelayPKP>();
+  const [sessionSigs, setSessionSigs] = useState<SessionSigs>();
+
+  const [message, setMessage] = useState<string>('Free the web!');
+  const [signature, setSignature] = useState<string>();
+  const [recoveredAddress, setRecoveredAddress] = useState<string>();
+  const [verified, setVerified] = useState<boolean>(false);
+
+  /**
+   * Redirect user to the Google authorization page
+   */
+  function signInWithGoogle() {
+    if (litAuthClient) {
+      litAuthClient.signInWithSocial('google');
+    }
+  }
 
   /**
    * Handle redirect from Lit login server
@@ -54,13 +73,16 @@ export default function Home() {
   const handleRedirect = useCallback(async () => {
     setView(Views.HANDLE_REDIRECT);
     try {
-      // Get Google ID token from redirect callback
-      const googleIdToken = handleSignInRedirect(REDIRECT_URI);
-      setGoogleIdToken(googleIdToken);
+      // Get auth method object that has the Google ID token from redirect callback
+      const authMethod: AuthMethod = litAuthClient.handleSignInRedirect();
+      setAuthMethod(authMethod);
 
       // Fetch PKPs associated with Google account
       setView(Views.FETCHING);
-      const pkps = await fetchGooglePKPs(googleIdToken);
+      console.log('authMethod', authMethod);
+      const pkps: IRelayPKP[] = await litAuthClient.fetchPKPsByAuthMethod(
+        authMethod
+      );
       if (pkps.length > 0) {
         setPKPs(pkps);
       }
@@ -73,7 +95,7 @@ export default function Home() {
     // Clear url params once we have the Google ID token
     // Be sure to use the redirect uri route
     router.replace('/', undefined, { shallow: true });
-  }, [router]);
+  }, [litAuthClient, authMethod, router]);
 
   /**
    * Mint a new PKP for the authorized Google account
@@ -83,10 +105,12 @@ export default function Home() {
 
     try {
       // Mint new PKP
-      const newPKP = await mintGooglePKP(googleIdToken);
+      const newPKP: IRelayPKP = await litAuthClient.mintPKPWithAuthMethod(
+        authMethod
+      );
 
       // Add new PKP to list of PKPs
-      const morePKPs = pkps.push(newPKP);
+      const morePKPs: IRelayPKP[] = [...pkps, newPKP];
       setPKPs(morePKPs);
 
       setView(Views.MINTED);
@@ -103,23 +127,18 @@ export default function Home() {
   /**
    * Generate session sigs for current PKP
    *
-   * @param {Object} PKP - PKP object
+   * @param {Object} pkp - PKP object
    */
-  async function createSession(pkp) {
+  async function createSession(pkp: IRelayPKP) {
     setView(Views.CREATING_SESSION);
 
     try {
       // Create session with new PKP
-      const authMethods = [
-        {
-          authMethodType: 6,
-          accessToken: googleIdToken,
-        },
-      ];
-      const authNeededCallback = getDefaultAuthNeededCallback(
+      const authMethods: AuthMethod[] = [authMethod];
+      const authNeededCallback = getSocialAuthNeededCallback({
         authMethods,
-        pkp.publicKey
-      );
+        pkpPublicKey: pkp.publicKey,
+      });
 
       // Get session signatures
       const sessionSigs = await litNodeClient.getSessionSigs({
@@ -156,6 +175,12 @@ export default function Home() {
       // Sign message
       const results = await litNodeClient.executeJs({
         code: litActionCode,
+        authSig: {
+          sig: '',
+          derivedVia: '',
+          signedMessage: '',
+          address: '',
+        },
         sessionSigs,
         jsParams: {
           toSign: toSign,
@@ -187,21 +212,25 @@ export default function Home() {
 
   useEffect(() => {
     /**
-     * Initialize LitNodeClient
+     * Initialize LitNodeClient and LitAuthClient
      */
-    async function initLitNodeClient() {
+    async function initClients() {
       try {
-        // Set up LitNodeClient
+        // Set up LitNodeClient and connect to Lit nodes
         const litNodeClient = new LitNodeClient({
           litNetwork: 'serrano',
           debug: false,
         });
-
-        // Connect to Lit nodes
         await litNodeClient.connect();
-
-        // Set LitNodeClient
         setLitNodeClient(litNodeClient);
+
+        // Set up LitAuthClient
+        const litAuthClient = new LitAuthClient({
+          domain: window.location.origin,
+          redirectUri: window.location.href,
+          litRelayApiKey: 'google-auth-next-example',
+        });
+        setLitAuthClient(litAuthClient);
       } catch (err) {
         setError(err);
         setView(Views.ERROR);
@@ -209,16 +238,20 @@ export default function Home() {
     }
 
     if (!litNodeClient) {
-      initLitNodeClient();
+      initClients();
     }
   }, [litNodeClient]);
 
   useEffect(() => {
     // Check if app has been redirected from Lit login server
-    if (isSignInRedirect(REDIRECT_URI)) {
+    if (litAuthClient && litAuthClient.isSignInRedirect()) {
       handleRedirect();
     }
-  }, [handleRedirect]);
+  }, [litAuthClient, handleRedirect]);
+
+  if (!litNodeClient) {
+    return null;
+  }
 
   return (
     <>
@@ -241,7 +274,7 @@ export default function Home() {
                 if (sessionSigs) {
                   setView(Views.SESSION_CREATED);
                 } else {
-                  if (googleIdToken) {
+                  if (authMethod) {
                     setView(Views.FETCHED);
                   } else {
                     setView(Views.SIGN_IN);
@@ -343,94 +376,4 @@ export default function Home() {
       </main>
     </>
   );
-}
-
-/**
- * Redirect user to the Google authorization page
- */
-function signInWithGoogle() {
-  // Get login url
-  const loginUrl = getLoginUrl(REDIRECT_URI);
-  // Redirect to login url
-  window.location.assign(loginUrl);
-}
-
-/**
- * Fetch PKPs associated with the given Google account through the relay server
- *
- * @param {string} idToken - Google ID token
- *
- * @returns PKPs associated with Google account
- */
-async function fetchGooglePKPs(idToken) {
-  // Fetch PKPs associated with Google OAuth
-  const body = JSON.stringify({
-    idToken: idToken,
-  });
-  const fetchRes = await fetchPKPs(body);
-  const { pkps } = fetchRes;
-  if (!pkps) {
-    throw new Error('Unable to fetch PKPs through relay server');
-  }
-  return pkps;
-}
-
-/**
- * Mint a PKP for the given Google account through the relay server
- *
- * @param {string} idToken - Google ID token
- *
- * @returns newly minted PKP
- */
-async function mintGooglePKP(idToken) {
-  // Mint a new PKP via relay server
-  const body = JSON.stringify({
-    idToken: idToken,
-  });
-  const mintRes = await mintPKP(body);
-  const { requestId } = mintRes;
-  if (!requestId) {
-    throw new Error('Unable to mint PKP through relay server');
-  }
-
-  // Poll for status of minting PKP
-  const pollRes = await pollRequestUntilTerminalState(requestId);
-  if (!pollRes.pkpEthAddress || !pollRes.pkpPublicKey) {
-    throw new Error('Unable to mint PKP through relay server');
-  }
-  const newPKP = {
-    ethAddress: pollRes.pkpEthAddress,
-    publicKey: pollRes.pkpPublicKey,
-  };
-  return newPKP;
-}
-
-/**
- * Default callback to prompt the user to authenticate with their PKP via non-wallet auth methods such as social login
- *
- * @param {AuthMethod[]} authMethods - Auth method array that includes the auth method type and data
- * @param {string} pkpPublicKey - Public key of the PKP
- *
- * @returns callback function
- */
-function getDefaultAuthNeededCallback(authMethods, pkpPublicKey) {
-  const defaultCallback = async ({
-    chainId,
-    resources,
-    expiration,
-    uri,
-    litNodeClient,
-  }) => {
-    const sessionSig = await litNodeClient.signSessionKey({
-      sessionKey: uri,
-      authMethods: authMethods,
-      pkpPublicKey: pkpPublicKey,
-      expiration,
-      resources,
-      chainId,
-    });
-    return sessionSig;
-  };
-
-  return defaultCallback;
 }
