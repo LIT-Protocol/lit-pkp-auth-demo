@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@lit-protocol/constants": "file:../js-sdk/packages/constants",
     "@lit-protocol/lit-auth-client": "file:../js-sdk/packages/lit-auth-client",
     "@lit-protocol/lit-node-client": "^2.1.96",
     "@lit-protocol/types": "file:../js-sdk/packages/types",
@@ -20,7 +21,8 @@
     "next": "13.2.4",
     "prettier": "^2.8.7",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "wagmi": "^0.12.8"
   },
   "devDependencies": {
     "@types/node": "18.15.11",

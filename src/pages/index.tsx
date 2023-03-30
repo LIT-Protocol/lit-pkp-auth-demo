@@ -1,21 +1,25 @@
 import Head from 'next/head';
-import Image from 'next/image';
 import { Inter } from 'next/font/google';
 import { useCallback, useEffect, useState } from 'react';
 import { LitNodeClient } from '@lit-protocol/lit-node-client';
 import {
   LitAuthClient,
   getSocialAuthNeededCallback,
+  getEthWalletAuthNeededCallback,
 } from '@lit-protocol/lit-auth-client';
 import { IRelayPKP, AuthMethod } from '@lit-protocol/types';
+import { AuthMethodType } from '@lit-protocol/constants';
 import { ethers } from 'ethers';
 import { useRouter } from 'next/router';
+import { useConnect, useAccount, useDisconnect } from 'wagmi';
+import { signMessage } from '@wagmi/core';
 
 const inter = Inter({ subsets: ['latin'] });
 
 enum Views {
   SIGN_IN = 'sign_in',
   HANDLE_REDIRECT = 'handle_redirect',
+  REQUEST_AUTHSIG = 'request_authsig',
   FETCHING = 'fetching',
   FETCHED = 'fetched',
   MINTING = 'minting',
@@ -40,7 +44,7 @@ interface SessionSig {
   algo: string;
 }
 
-export default function Home() {
+export default function Dashboard() {
   const router = useRouter();
 
   const [view, setView] = useState<Views>(Views.SIGN_IN);
@@ -58,13 +62,54 @@ export default function Home() {
   const [recoveredAddress, setRecoveredAddress] = useState<string>();
   const [verified, setVerified] = useState<boolean>(false);
 
-  /**
-   * Redirect user to the Google authorization page
-   */
-  function signInWithGoogle() {
-    if (litAuthClient) {
-      litAuthClient.signInWithSocial('google');
+  // Use wagmi to connect one's eth wallet
+  const { connectAsync, connectors } = useConnect({
+    onError(error) {
+      console.error(error);
+      setError(error);
+    },
+  });
+  const { isConnected, connector, address } = useAccount();
+  const { disconnectAsync } = useDisconnect();
+
+  /** Use wagmi to connect one's eth wallet and then request a signature from one's wallet */
+  async function handleConnectWallet(c) {
+    const { account, chain, connector } = await connectAsync(c);
+    try {
+      await authWithWallet(account, connector);
+    } catch (err) {
+      console.error(err);
+      setError(err);
+      setView(Views.ERROR);
     }
+  }
+
+  async function authWithWallet(address, connector) {
+    setView(Views.REQUEST_AUTHSIG);
+
+    // Get auth sig
+    const signer = await connector.getSigner();
+    const signAuthSig = async (message: string) => {
+      const sig = await signer.signMessage(message);
+      return sig;
+    };
+    const authMethod = await litAuthClient.signInWithEthWallet({
+      address,
+      signMessage: signAuthSig,
+    });
+    setAuthMethod(authMethod);
+    console.log('authMethod', authMethod);
+
+    // Fetch PKPs associated with eth wallet account
+    setView(Views.FETCHING);
+    const pkps: IRelayPKP[] = await litAuthClient.fetchPKPsByAuthMethod(
+      authMethod
+    );
+    if (pkps.length > 0) {
+      console.log(pkps);
+      setPKPs(pkps);
+    }
+    setView(Views.FETCHED);
   }
 
   /**
@@ -73,13 +118,12 @@ export default function Home() {
   const handleRedirect = useCallback(async () => {
     setView(Views.HANDLE_REDIRECT);
     try {
-      // Get auth method object that has the Google ID token from redirect callback
+      // Get auth method object that has the OAuth token from redirect callback
       const authMethod: AuthMethod = litAuthClient.handleSignInRedirect();
       setAuthMethod(authMethod);
 
-      // Fetch PKPs associated with Google account
+      // Fetch PKPs associated with social account
       setView(Views.FETCHING);
-      console.log('authMethod', authMethod);
       const pkps: IRelayPKP[] = await litAuthClient.fetchPKPsByAuthMethod(
         authMethod
       );
@@ -88,17 +132,18 @@ export default function Home() {
       }
       setView(Views.FETCHED);
     } catch (err) {
+      console.error(err);
       setError(err);
       setView(Views.ERROR);
     }
 
-    // Clear url params once we have the Google ID token
+    // Clear url params once we have the OAuth token
     // Be sure to use the redirect uri route
-    router.replace('/', undefined, { shallow: true });
-  }, [litAuthClient, authMethod, router]);
+    router.replace(window.location.pathname, undefined, { shallow: true });
+  }, [litAuthClient, router]);
 
   /**
-   * Mint a new PKP for the authorized Google account
+   * Mint a new PKP for current auth method
    */
   async function mint() {
     setView(Views.MINTING);
@@ -119,6 +164,7 @@ export default function Home() {
       // Get session sigs for new PKP
       await createSession(newPKP);
     } catch (err) {
+      console.error(err);
       setError(err);
       setView(Views.ERROR);
     }
@@ -132,13 +178,25 @@ export default function Home() {
   async function createSession(pkp: IRelayPKP) {
     setView(Views.CREATING_SESSION);
 
+    let authNeededCallback;
     try {
-      // Create session with new PKP
-      const authMethods: AuthMethod[] = [authMethod];
-      const authNeededCallback = getSocialAuthNeededCallback({
-        authMethods,
-        pkpPublicKey: pkp.publicKey,
-      });
+      if (authMethod.authMethodType === AuthMethodType.EthWallet) {
+        const signAuthSig = async (message: string) => {
+          const sig = await signMessage({ message: message });
+          return sig;
+        };
+        console.log('litAuthClient.domain', litAuthClient.domain);
+        authNeededCallback = getEthWalletAuthNeededCallback({
+          domain: litAuthClient.domain,
+          address,
+          signMessage: signAuthSig,
+        });
+      } else {
+        authNeededCallback = getSocialAuthNeededCallback({
+          authMethods: [authMethod],
+          pkpPublicKey: pkp.publicKey,
+        });
+      }
 
       // Get session signatures
       const sessionSigs = await litNodeClient.getSessionSigs({
@@ -148,9 +206,11 @@ export default function Home() {
       });
       setCurrentPKP(pkp);
       setSessionSigs(sessionSigs);
+      console.log('sessionSigs', sessionSigs);
 
       setView(Views.SESSION_CREATED);
     } catch (err) {
+      console.error(err);
       setError(err);
       setView(Views.ERROR);
     }
@@ -159,7 +219,7 @@ export default function Home() {
   /**
    * Sign a message with current PKP
    */
-  async function signMessage() {
+  async function signMessageWithPKP() {
     try {
       const toSign = ethers.utils.arrayify(ethers.utils.hashMessage(message));
       const litActionCode = `
@@ -173,15 +233,10 @@ export default function Home() {
         go();
       `;
       // Sign message
+      // @ts-ignore - complains about no authSig, but we don't need one for this action
       const results = await litNodeClient.executeJs({
         code: litActionCode,
-        authSig: {
-          sig: '',
-          derivedVia: '',
-          signedMessage: '',
-          address: '',
-        },
-        sessionSigs,
+        sessionSigs: sessionSigs,
         jsParams: {
           toSign: toSign,
           publicKey: currentPKP.publicKey,
@@ -205,6 +260,7 @@ export default function Home() {
         currentPKP.ethAddress.toLowerCase() === recoveredAddr.toLowerCase();
       setVerified(verified);
     } catch (err) {
+      console.error(err);
       setError(err);
       setView(Views.ERROR);
     }
@@ -226,12 +282,13 @@ export default function Home() {
 
         // Set up LitAuthClient
         const litAuthClient = new LitAuthClient({
-          domain: window.location.origin,
-          redirectUri: window.location.href,
+          domain: process.env.NEXT_PUBLIC_VERCEL_URL || 'localhost:3000',
+          redirectUri: window.location.href.replace(/\/+$/, ''),
           litRelayApiKey: 'google-auth-next-example',
         });
         setLitAuthClient(litAuthClient);
       } catch (err) {
+        console.error(err);
         setError(err);
         setView(Views.ERROR);
       }
@@ -244,10 +301,10 @@ export default function Home() {
 
   useEffect(() => {
     // Check if app has been redirected from Lit login server
-    if (litAuthClient && litAuthClient.isSignInRedirect()) {
+    if (litAuthClient && litAuthClient.isSignInRedirect() && !authMethod) {
       handleRedirect();
     }
-  }, [litAuthClient, handleRedirect]);
+  }, [litAuthClient, handleRedirect, authMethod]);
 
   if (!litNodeClient) {
     return null;
@@ -256,7 +313,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Lit x Google OAuth</title>
+        <title>Lit Auth Client</title>
         <meta
           name="description"
           content="Create a PKP with just a Google account"
@@ -290,12 +347,72 @@ export default function Home() {
         {view === Views.SIGN_IN && (
           <>
             <h1>Sign in with Lit</h1>
-            <button onClick={signInWithGoogle}>Google</button>
+            {/* Since eth wallet is connected, prompt user to sign a message or disconnect their wallet */}
+            <>
+              {isConnected ? (
+                <>
+                  <button
+                    disabled={!connector.ready}
+                    key={connector.id}
+                    onClick={async () => {
+                      setError(null);
+                      await authWithWallet(address, connector);
+                    }}
+                  >
+                    Continue with {connector.name}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setError(null);
+                      await disconnectAsync();
+                    }}
+                  >
+                    Disconnect wallet
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* If eth wallet is not connected, show all login options */}
+                  <button
+                    onClick={() => {
+                      litAuthClient.signInWithSocial('google');
+                    }}
+                  >
+                    Google
+                  </button>
+                  <button
+                    onClick={() => {
+                      litAuthClient.signInWithSocial('discord');
+                    }}
+                  >
+                    Discord
+                  </button>
+
+                  {connectors.map(connector => (
+                    <button
+                      disabled={!connector.ready}
+                      key={connector.id}
+                      onClick={async () => {
+                        setError(null);
+                        await handleConnectWallet({ connector });
+                      }}
+                    >
+                      {connector.name}
+                    </button>
+                  ))}
+                </>
+              )}
+            </>
           </>
         )}
         {view === Views.HANDLE_REDIRECT && (
           <>
             <h1>Verifying your identity...</h1>
+          </>
+        )}
+        {view === Views.REQUEST_AUTHSIG && (
+          <>
+            <h1>Check your wallet</h1>
           </>
         )}
         {view === Views.FETCHING && (
@@ -358,7 +475,7 @@ export default function Home() {
             <div>
               <p>Sign this message with your PKP:</p>
               <p>{message}</p>
-              <button onClick={signMessage}>Sign message</button>
+              <button onClick={signMessageWithPKP}>Sign message</button>
 
               {signature && (
                 <>
