@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@lit-protocol/lit-node-client": "^2.1.94",
+    "@lit-protocol/lit-node-client": "^2.1.118",
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
     "eslint-config-prettier": "^8.8.0",
