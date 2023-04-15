@@ -1,4 +1,4 @@
-const RELAY_API_URL = 'https://lit-relay-server.herokuapp.com';
+const RELAY_API_URL = 'https://relay-server-staging.herokuapp.com';
 const RELAY_API_KEY = 'google-auth-next-example';
 
 /**
