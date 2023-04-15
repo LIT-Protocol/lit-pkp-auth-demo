@@ -109,24 +109,43 @@ export default function Home() {
     setView(Views.CREATING_SESSION);
 
     try {
-      // Create session with new PKP
-      const authMethods = [
-        {
-          authMethodType: 6,
-          accessToken: googleIdToken,
-        },
-      ];
-      const authNeededCallback = getDefaultAuthNeededCallback(
-        authMethods,
-        pkp.publicKey
-      );
+      // Connect to LitNodeClient if not already connected
+      if (!litNodeClient.ready) {
+        await litNodeClient.connect();
+      }
 
-      // Get session signatures
+      const authNeededCallback = async authCallbackParams => {
+        let chainId = 1;
+        try {
+          const chainInfo = ALL_LIT_CHAINS[authCallbackParams.chain];
+          chainId = chainInfo.chainId;
+        } catch {
+          // Do nothing
+        }
+
+        let response = await litNodeClient.signSessionKey({
+          authMethods: [
+            {
+              authMethodType: 6,
+              accessToken: googleIdToken,
+            },
+          ],
+          pkpPublicKey: pkp.publicKey,
+          expiration: authCallbackParams.expiration,
+          resources: authCallbackParams.resources,
+          chainId,
+        });
+
+        return response.authSig;
+      };
+
+      // Generate session sigs with the given session params
       const sessionSigs = await litNodeClient.getSessionSigs({
         chain: 'ethereum',
         resources: [`litAction://*`],
-        authNeededCallback: authNeededCallback,
+        authNeededCallback,
       });
+
       setCurrentPKP(pkp);
       setSessionSigs(sessionSigs);
 
@@ -395,42 +414,18 @@ async function mintGooglePKP(idToken) {
 
   // Poll for status of minting PKP
   const pollRes = await pollRequestUntilTerminalState(requestId);
-  if (!pollRes.pkpEthAddress || !pollRes.pkpPublicKey) {
-    throw new Error('Unable to mint PKP through relay server');
+  if (
+    !pollRes ||
+    !pollRes.pkpTokenId ||
+    !pollRes.pkpEthAddress ||
+    !pollRes.pkpPublicKey
+  ) {
+    throw new Error('Missing poll response or new PKP from relay server');
   }
   const newPKP = {
+    tokenId: pollRes.pkpTokenId,
     ethAddress: pollRes.pkpEthAddress,
     publicKey: pollRes.pkpPublicKey,
   };
   return newPKP;
-}
-
-/**
- * Default callback to prompt the user to authenticate with their PKP via non-wallet auth methods such as social login
- *
- * @param {AuthMethod[]} authMethods - Auth method array that includes the auth method type and data
- * @param {string} pkpPublicKey - Public key of the PKP
- *
- * @returns callback function
- */
-function getDefaultAuthNeededCallback(authMethods, pkpPublicKey) {
-  const defaultCallback = async ({
-    chainId,
-    resources,
-    expiration,
-    uri,
-    litNodeClient,
-  }) => {
-    const sessionSig = await litNodeClient.signSessionKey({
-      sessionKey: uri,
-      authMethods: authMethods,
-      pkpPublicKey: pkpPublicKey,
-      expiration,
-      resources,
-      chainId,
-    });
-    return sessionSig;
-  };
-
-  return defaultCallback;
 }
