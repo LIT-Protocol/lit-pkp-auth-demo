@@ -15,6 +15,7 @@ import {
   pollRequestUntilTerminalState,
 } from '@/utils/relay';
 import { useRouter } from 'next/router';
+import {newSessionCapabilityObject, LitAccessControlConditionResource, LitAbility} from '@lit-protocol/auth-helpers';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -138,11 +139,15 @@ export default function Home() {
 
         return response.authSig;
       };
-
+      // Create the Lit Resource keyed by `someResource`
+      const litResource = new LitAccessControlConditionResource('*');
       // Generate session sigs with the given session params
       const sessionSigs = await litNodeClient.getSessionSigs({
         chain: 'ethereum',
-        resources: [`litAction://*`],
+        resourceAbilityRequests: [{
+          resource: litResource,
+          ability: LitAbility.PKPSigning
+        }],
         authNeededCallback,
       });
 
