@@ -46,7 +46,7 @@ export default function SignUpMethods({
             <h1>Get started</h1>
             <p>
               Create a wallet that is secured by accounts you already have. With
-              Lit-powered programmable MPC wallets, you won't have to worry
+              Lit-powered programmable MPC wallets, you won&apos;t have to worry
               about seed phrases.
             </p>
             <AuthMethods

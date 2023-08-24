@@ -17,8 +17,8 @@ const WalletMethods = ({ authWithEthWallet, setView }: WalletMethodsProps) => {
     <>
       <h1>Connect your web3 wallet</h1>
       <p>
-        Connect your wallet then sign a message to verify you're the owner of
-        the address.
+        Connect your wallet then sign a message to verify you&apos;re the owner
+        of the address.
       </p>
       <div className="buttons-container">
         {connectors.map(connector => (
