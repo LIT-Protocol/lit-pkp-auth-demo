@@ -44,7 +44,6 @@ const StytchOTP = ({ authWithStytch, setView }: StytchOTPProps) => {
       const response = await stytchClient.otps.authenticate(code, methodId, {
         session_duration_minutes: 60,
       });
-      console.log('response.session_jwt', response.session_jwt);
       await authWithStytch(response.session_jwt, response.user_id);
     } catch (err) {
       setError(err);
