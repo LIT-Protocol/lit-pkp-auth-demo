@@ -1,32 +1,47 @@
-# Programmable MPC Wallets with Flexible Auth 🔑
+# Lit MFA
+Multi-factor authentication with Lit Protocol
 
-This is an example web app that shows how you can mint and use Lit's programmable MPC wallets with social accounts, one-time passwords, and passkeys using [Lit JS SDK](https://developer.litprotocol.com/v2/).
+## Overview
 
-## 💻 Getting Started
+This example web app demonstrates the implementation of a robust Multi-Factor Authentication (MFA) system using Lit Protocol's JS SDK. It supports various authentication methods.
 
-1. Clone this repo and install dependencies:
+### Supported Authentication Methods
+- SMS
+- Email
+- Passkey
+- Web3 Wallets
+- WebAuthn
+- Google Authenticator
+
+## Getting Started
+To get started with this project, follow these steps:
+
+### Clone the Repository
 
 ```bash
-git clone git@github.com:LIT-Protocol/pkp-social-auth-example.git
+git clone https://github.com/tesla809/demo-mfa-react.git
+cd demo-mfa-react
+```
 
-cd pkp-social-auth-example
+### Install Dependencies
 
+```bash
 npm install
 ```
 
-2. Add your Stytch project's `project_id` and `public_token` to `.env.local`:
+### Configure Environment
+Add your project-specific environment variables to .env.local. This includes credentials for SMS, email services, and any other third-party services you're using:
 
-```bash
-NEXT_PUBLIC_STYTCH_PROJECT_ID="<Your Stytch Project ID>"
-NEXT_PUBLIC_STYTCH_PUBLIC_TOKEN="<Your Stytch Public Token>"
+```env
+NEXT_PUBLIC_SMS_API_KEY="<Your SMS API Key>"
+NEXT_PUBLIC_EMAIL_SERVICE_ID="<Your Email Service ID>"
+# Add other relevant variables here
 ```
 
-If you're not using Stytch, feel free to comment out the Stytch provider `StytchProvider` and Stytch component `StytchOTP`.
-
-3. Start your development server:
+### Start Development Server
 
 ```bash
 npm run dev
 ```
 
-4. Visit [http://localhost:3000](http://localhost:3000) to start playing with the app.
+Visit http://localhost:3000 to interact with the app.
