@@ -9,7 +9,6 @@ interface SignUpProps {
   handleGoogleLogin: () => Promise<void>;
   handleDiscordLogin: () => Promise<void>;
   authWithEthWallet: any;
-  authWithOTP: any;
   registerWithWebAuthn: any;
   authWithWebAuthn: any;
   authWithStytch: any;
@@ -23,7 +22,6 @@ export default function SignUpMethods({
   handleGoogleLogin,
   handleDiscordLogin,
   authWithEthWallet,
-  authWithOTP,
   registerWithWebAuthn,
   authWithWebAuthn,
   authWithStytch,

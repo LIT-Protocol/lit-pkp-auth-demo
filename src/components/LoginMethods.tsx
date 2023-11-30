@@ -9,7 +9,6 @@ interface LoginProps {
   handleGoogleLogin: () => Promise<void>;
   handleDiscordLogin: () => Promise<void>;
   authWithEthWallet: any;
-  authWithOTP: any;
   authWithWebAuthn: any;
   authWithStytch: any;
   signUp: any;
@@ -22,7 +21,6 @@ export default function LoginMethods({
   handleGoogleLogin,
   handleDiscordLogin,
   authWithEthWallet,
-  authWithOTP,
   authWithWebAuthn,
   authWithStytch,
   signUp,
