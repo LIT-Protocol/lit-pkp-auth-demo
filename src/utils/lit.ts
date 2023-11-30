@@ -4,15 +4,19 @@ import {
   EthWalletProvider,
   WebAuthnProvider,
   LitAuthClient,
-  OtpProvider,
 } from '@lit-protocol/lit-auth-client';
-import { AuthMethodType, ProviderType } from '@lit-protocol/constants';
+import { LitNodeClient } from '@lit-protocol/lit-node-client';
+import {
+  AuthMethodScope,
+  AuthMethodType,
+  ProviderType,
+} from '@lit-protocol/constants';
 import {
   AuthMethod,
   GetSessionSigsProps,
   IRelayPKP,
-  ProviderOptions,
   SessionSigs,
+  AuthCallbackParams,
 } from '@lit-protocol/types';
 
 export const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'localhost';
@@ -21,19 +25,18 @@ export const ORIGIN =
     ? `https://${DOMAIN}`
     : `http://${DOMAIN}:3000`;
 
+export const litNodeClient: LitNodeClient = new LitNodeClient({
+  alertWhenUnauthorized: false,
+  litNetwork: 'cayenne',
+  debug: true,
+});
+
 export const litAuthClient: LitAuthClient = new LitAuthClient({
   litRelayConfig: {
     relayApiKey: 'test-api-key',
   },
-  litOtpConfig: {
-    baseUrl: 'https://auth-api.litgateway.com',
-    port: '443',
-    startRoute: '/api/otp/start',
-    checkRoute: '/api/otp/check',
-  },
+  litNodeClient,
 });
-
-export const litNodeClient = litAuthClient.litNodeClient;
 
 /**
  * Validate provider
@@ -154,31 +157,6 @@ export async function authenticateWithWebAuthn(): Promise<
 }
 
 /**
- * Send OTP code to user
- */
-export async function sendOTPCode(emailOrPhone: string) {
-  const otpProvider = litAuthClient.initProvider<OtpProvider>(
-    ProviderType.Otp,
-    {
-      userId: emailOrPhone,
-    } as unknown as ProviderOptions
-  );
-  const status = await otpProvider.sendOtpCode();
-  return status;
-}
-
-/**
- * Get auth method object by validating the OTP code
- */
-export async function authenticateWithOTP(
-  code: string
-): Promise<AuthMethod | undefined> {
-  const otpProvider = litAuthClient.getProvider(ProviderType.Otp);
-  const authMethod = await otpProvider?.authenticate({ code });
-  return authMethod;
-}
-
-/**
  * Get auth method object by validating Stytch JWT
  */
 export async function authenticateWithStytch(
@@ -205,19 +183,38 @@ export async function getSessionSigs({
   authMethod: AuthMethod;
   sessionSigsParams: GetSessionSigsProps;
 }): Promise<SessionSigs> {
-  const provider = getProviderByAuthMethod(authMethod);
-  if (provider) {
-    const sessionSigs = await provider.getSessionSigs({
-      pkpPublicKey,
-      authMethod,
-      sessionSigsParams,
+  // const provider = getProviderByAuthMethod(authMethod);
+  // if (provider) {
+  //   const sessionSigs = await provider.getSessionSigs({
+  //     pkpPublicKey,
+  //     authMethod,
+  //     sessionSigsParams,
+  //   });
+  //   return sessionSigs;
+  // } else {
+  //   throw new Error(
+  //     `Provider not found for auth method type ${authMethod.authMethodType}`
+  //   );
+  // }
+  await litNodeClient.connect();
+  const authNeededCallback = async (params: AuthCallbackParams) => {
+    const response = await litNodeClient.signSessionKey({
+      statement: params.statement,
+      authMethods: [authMethod],
+      pkpPublicKey: pkpPublicKey,
+      expiration: params.expiration,
+      resources: params.resources,
+      chainId: 1,
     });
-    return sessionSigs;
-  } else {
-    throw new Error(
-      `Provider not found for auth method type ${authMethod.authMethodType}`
-    );
-  }
+    return response.authSig;
+  };
+
+  const sessionSigs = await litNodeClient.getSessionSigs({
+    ...sessionSigsParams,
+    authNeededCallback,
+  });
+
+  return sessionSigs;
 }
 
 export async function updateSessionSigs(
@@ -241,20 +238,24 @@ export async function getPKPs(authMethod: AuthMethod): Promise<IRelayPKP[]> {
  */
 export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
   const provider = getProviderByAuthMethod(authMethod);
+  // Set scope of signing any data
+  const options = {
+    permittedAuthMethodScopes: [[AuthMethodScope.SignAnything]],
+  };
 
   let txHash: string;
 
   if (authMethod.authMethodType === AuthMethodType.WebAuthn) {
     // Register new WebAuthn credential
-    const options = await (provider as WebAuthnProvider).register();
+    const webAuthnInfo = await (provider as WebAuthnProvider).register();
 
     // Verify registration and mint PKP through relay server
     txHash = await (
       provider as WebAuthnProvider
-    ).verifyAndMintPKPThroughRelayer(options);
+    ).verifyAndMintPKPThroughRelayer(webAuthnInfo, options);
   } else {
     // Mint PKP through relay server
-    txHash = await provider.mintPKPThroughRelayer(authMethod);
+    txHash = await provider.mintPKPThroughRelayer(authMethod, options);
   }
 
   const response = await provider.relay.pollRequestUntilTerminalState(txHash);
@@ -282,8 +283,6 @@ function getProviderByAuthMethod(authMethod: AuthMethod) {
       return litAuthClient.getProvider(ProviderType.EthWallet);
     case AuthMethodType.WebAuthn:
       return litAuthClient.getProvider(ProviderType.WebAuthn);
-    case AuthMethodType.OTP:
-      return litAuthClient.getProvider(ProviderType.Otp);
     case AuthMethodType.StytchOtp:
       return litAuthClient.getProvider(ProviderType.StytchOtp);
     default:

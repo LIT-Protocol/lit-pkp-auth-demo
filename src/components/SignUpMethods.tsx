@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 import AuthMethods from './AuthMethods';
-import EmailSMSAuth from './EmailSMSAuth';
 import WalletMethods from './WalletMethods';
 import WebAuthn from './WebAuthn';
 import StytchOTP from './StytchOTP';
@@ -66,21 +65,18 @@ export default function SignUpMethods({
           </>
         )}
         {view === 'email' && (
-          <EmailSMSAuth
+          <StytchOTP
             method={'email'}
+            authWithStytch={authWithStytch}
             setView={setView}
-            authWithOTP={authWithOTP}
           />
         )}
-        {/* {view === 'phone' && (
-          <EmailSMSAuth
-            method={'phone'}
-            setView={setView}
-            authWithOTP={authWithOTP}
-          />
-        )} */}
         {view === 'phone' && (
-          <StytchOTP authWithStytch={authWithStytch} setView={setView} />
+          <StytchOTP
+            method={'phone'}
+            authWithStytch={authWithStytch}
+            setView={setView}
+          />
         )}
         {view === 'wallet' && (
           <WalletMethods
