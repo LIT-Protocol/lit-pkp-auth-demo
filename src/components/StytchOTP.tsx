@@ -1,19 +1,21 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useStytch } from '@stytch/nextjs';
 
 interface StytchOTPProps {
+  method: OtpMethod;
   authWithStytch: any;
   setView: React.Dispatch<React.SetStateAction<string>>;
 }
 
+type OtpMethod = 'email' | 'phone';
 type OtpStep = 'submit' | 'verify';
 
 /**
  * One-time passcodes can be sent via phone number through Stytch
  */
-const StytchOTP = ({ authWithStytch, setView }: StytchOTPProps) => {
+const StytchOTP = ({ method, authWithStytch, setView }: StytchOTPProps) => {
   const [step, setStep] = useState<OtpStep>('submit');
-  const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
   const [methodId, setMethodId] = useState<string>('');
   const [code, setCode] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -26,7 +28,14 @@ const StytchOTP = ({ authWithStytch, setView }: StytchOTPProps) => {
     setLoading(true);
     setError(undefined);
     try {
-      const response = await stytchClient.otps.sms.loginOrCreate(phoneNumber);
+      let response;
+      if (method === 'email') {
+        response = await stytchClient.otps.email.loginOrCreate(userId);
+      } else {
+        response = await stytchClient.otps.sms.loginOrCreate(
+          !userId.startsWith('+') ? `+${userId}` : userId
+        );
+      }
       setMethodId(response.method_id);
       setStep('verify');
     } catch (err) {
@@ -61,21 +70,23 @@ const StytchOTP = ({ authWithStytch, setView }: StytchOTPProps) => {
               <p>{error.message}</p>
             </div>
           )}
-          <h1>Enter your phone number</h1>
-          <p>A verification code will be sent to your phone number.</p>
+          <h1>Enter your {method}</h1>
+          <p>A verification code will be sent to your {method}.</p>
           <div className="form-wrapper">
             <form className="form" onSubmit={sendPasscode}>
-              <label htmlFor="phone number" className="sr-only">
-                Phone number
+              <label htmlFor={method} className="sr-only">
+                {method === 'email' ? 'Email' : 'Phone number'}
               </label>
               <input
-                id="phone number"
-                value={phoneNumber}
-                onChange={e => setPhoneNumber(e.target.value)}
-                type="tel"
-                name="phone number"
+                id={method}
+                value={userId}
+                onChange={e => setUserId(e.target.value)}
+                type={method === 'email' ? 'email' : 'tel'}
+                name={method}
                 className="form__input"
-                placeholder="Your phone number"
+                placeholder={
+                  method === 'email' ? 'Your email' : 'Your phone number'
+                }
                 autoComplete="off"
               ></input>
               <button
@@ -97,8 +108,8 @@ const StytchOTP = ({ authWithStytch, setView }: StytchOTPProps) => {
       )}
       {step === 'verify' && (
         <>
-          <h1>Check your phone</h1>
-          <p>Enter the 6-digit verification code to {phoneNumber}</p>
+          <h1>Check your {method}</h1>
+          <p>Enter the 6-digit verification code to {userId}</p>
           <div className="form-wrapper">
             <form className="form" onSubmit={authenticate}>
               <label htmlFor="code" className="sr-only">
