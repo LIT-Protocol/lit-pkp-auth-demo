@@ -183,38 +183,19 @@ export async function getSessionSigs({
   authMethod: AuthMethod;
   sessionSigsParams: GetSessionSigsProps;
 }): Promise<SessionSigs> {
-  // const provider = getProviderByAuthMethod(authMethod);
-  // if (provider) {
-  //   const sessionSigs = await provider.getSessionSigs({
-  //     pkpPublicKey,
-  //     authMethod,
-  //     sessionSigsParams,
-  //   });
-  //   return sessionSigs;
-  // } else {
-  //   throw new Error(
-  //     `Provider not found for auth method type ${authMethod.authMethodType}`
-  //   );
-  // }
-  await litNodeClient.connect();
-  const authNeededCallback = async (params: AuthCallbackParams) => {
-    const response = await litNodeClient.signSessionKey({
-      statement: params.statement,
-      authMethods: [authMethod],
-      pkpPublicKey: pkpPublicKey,
-      expiration: params.expiration,
-      resources: params.resources,
-      chainId: 1,
+  const provider = getProviderByAuthMethod(authMethod);
+  if (provider) {
+    const sessionSigs = await provider.getSessionSigs({
+      pkpPublicKey,
+      authMethod,
+      sessionSigsParams,
     });
-    return response.authSig;
-  };
-
-  const sessionSigs = await litNodeClient.getSessionSigs({
-    ...sessionSigsParams,
-    authNeededCallback,
-  });
-
-  return sessionSigs;
+    return sessionSigs;
+  } else {
+    throw new Error(
+      `Provider not found for auth method type ${authMethod.authMethodType}`
+    );
+  }
 }
 
 export async function updateSessionSigs(
