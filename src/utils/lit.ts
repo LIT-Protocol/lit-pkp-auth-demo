@@ -33,7 +33,6 @@ export const litNodeClient: LitNodeClient = new LitNodeClient({
 
 export const litAuthClient: LitAuthClient = new LitAuthClient({
   litRelayConfig: {
-    relayUrl: 'https://relay-server-staging.herokuapp.com',
     relayApiKey: 'test-api-key',
   },
   litNodeClient,
