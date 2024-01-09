@@ -122,7 +122,7 @@ export default function useAuthenticate(redirectUri?: string) {
    * Authenticate with Stytch
    */
   const authWithStytch = useCallback(
-    async (accessToken: string, userId?: string): Promise<void> => {
+    async (accessToken: string, userId?: string, method?: string): Promise<void> => {
       setLoading(true);
       setError(undefined);
       setAuthMethod(undefined);
@@ -130,7 +130,8 @@ export default function useAuthenticate(redirectUri?: string) {
       try {
         const result: AuthMethod = (await authenticateWithStytch(
           accessToken,
-          userId
+          userId,
+          method
         )) as any;
         setAuthMethod(result);
       } catch (err) {
