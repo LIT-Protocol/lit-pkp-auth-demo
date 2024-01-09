@@ -4,6 +4,7 @@ import {
   EthWalletProvider,
   WebAuthnProvider,
   LitAuthClient,
+  BaseProvider,
 } from '@lit-protocol/lit-auth-client';
 import { LitNodeClient } from '@lit-protocol/lit-node-client';
 import {
@@ -161,11 +162,20 @@ export async function authenticateWithWebAuthn(): Promise<
  */
 export async function authenticateWithStytch(
   accessToken: string,
-  userId?: string
+  userId?: string,
+  method?: string
 ) {
-  const provider = litAuthClient.initProvider(ProviderType.StytchOtp, {
-    appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID,
-  });
+  let provider: BaseProvider
+  if (method === "email") {
+    provider = litAuthClient.initProvider(ProviderType.StytchEmailFactorOtp, {
+      appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID,
+    });
+  } else {
+    provider = litAuthClient.initProvider(ProviderType.StytchSmsFactorOtp, {
+      appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID
+    });
+  }
+
   // @ts-ignore
   const authMethod = await provider?.authenticate({ accessToken, userId });
   return authMethod;
@@ -264,8 +274,10 @@ function getProviderByAuthMethod(authMethod: AuthMethod) {
       return litAuthClient.getProvider(ProviderType.EthWallet);
     case AuthMethodType.WebAuthn:
       return litAuthClient.getProvider(ProviderType.WebAuthn);
-    case AuthMethodType.StytchOtp:
-      return litAuthClient.getProvider(ProviderType.StytchOtp);
+    case AuthMethodType.StytchEmailFactorOtp:
+      return litAuthClient.getProvider(ProviderType.StytchEmailFactorOtp);
+    case AuthMethodType.StytchSmsFactorOtp:
+      return litAuthClient.getProvider(ProviderType.StytchSmsFactorOtp);
     default:
       return;
   }

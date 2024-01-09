@@ -36,6 +36,7 @@ const StytchOTP = ({ method, authWithStytch, setView }: StytchOTPProps) => {
           !userId.startsWith('+') ? `+${userId}` : userId
         );
       }
+      console.log(response);
       setMethodId(response.method_id);
       setStep('verify');
     } catch (err) {
@@ -53,7 +54,7 @@ const StytchOTP = ({ method, authWithStytch, setView }: StytchOTPProps) => {
       const response = await stytchClient.otps.authenticate(code, methodId, {
         session_duration_minutes: 60,
       });
-      await authWithStytch(response.session_jwt, response.user_id);
+      await authWithStytch(response.session_jwt, response.user_id, method);
     } catch (err) {
       setError(err);
     } finally {
