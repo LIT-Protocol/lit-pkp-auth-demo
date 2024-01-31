@@ -34,6 +34,7 @@ export default function useSession() {
         const sessionSigs = await getSessionSigs({
           pkpPublicKey: pkp.publicKey,
           authMethod,
+          //@ts-ignore
           sessionSigsParams: {
             chain,
             expiration,
