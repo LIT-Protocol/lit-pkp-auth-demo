@@ -9,9 +9,11 @@ import Loading from '../components/Loading';
 import LoginMethods from '../components/LoginMethods';
 import AccountSelection from '../components/AccountSelection';
 import CreateAccount from '../components/CreateAccount';
+import { useLit } from '../hooks/useLit';
 
 export default function LoginView() {
   const redirectUri = ORIGIN + '/login';
+  const { litAuthClient } = useLit();
 
   const {
     authMethod,
@@ -40,11 +42,11 @@ export default function LoginView() {
   const error = authError || accountsError || sessionError;
 
   async function handleGoogleLogin() {
-    await signInWithGoogle(redirectUri);
+    await signInWithGoogle(litAuthClient, redirectUri);
   }
 
   async function handleDiscordLogin() {
-    await signInWithDiscord(redirectUri);
+    await signInWithDiscord(litAuthClient, redirectUri);
   }
 
   function goToSignUp() {
@@ -57,14 +59,14 @@ export default function LoginView() {
       router.replace(window.location.pathname, undefined, { shallow: true });
       fetchAccounts(authMethod);
     }
-  }, [authMethod, fetchAccounts]);
+  }, [authMethod, fetchAccounts, router]);
 
   useEffect(() => {
     // If user is authenticated and has selected an account, initialize session
     if (authMethod && currentAccount) {
-      initSession(authMethod, currentAccount);
+      initSession(litAuthClient, authMethod, currentAccount);
     }
-  }, [authMethod, currentAccount, initSession]);
+  }, [authMethod, currentAccount, initSession, litAuthClient]);
 
   if (authLoading) {
     return (

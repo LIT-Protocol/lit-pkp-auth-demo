@@ -6,7 +6,6 @@ import {
   LitAuthClient,
   BaseProvider,
 } from '@lit-protocol/lit-auth-client';
-import { LitNodeClient } from '@lit-protocol/lit-node-client';
 import {
   AuthMethodScope,
   AuthMethodType,
@@ -17,7 +16,6 @@ import {
   GetSessionSigsProps,
   IRelayPKP,
   SessionSigs,
-  AuthCallbackParams,
 } from '@lit-protocol/types';
 
 export const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'localhost';
@@ -25,19 +23,6 @@ export const ORIGIN =
   process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
     ? `https://${DOMAIN}`
     : `http://${DOMAIN}:3000`;
-
-export const litNodeClient: LitNodeClient = new LitNodeClient({
-  alertWhenUnauthorized: false,
-  litNetwork: 'cayenne',
-  debug: true,
-});
-
-export const litAuthClient: LitAuthClient = new LitAuthClient({
-  litRelayConfig: {
-    relayApiKey: 'test-api-key',
-  },
-  litNodeClient,
-});
 
 /**
  * Validate provider
@@ -49,7 +34,7 @@ export function isSocialLoginSupported(provider: string): boolean {
 /**
  * Redirect to Lit login
  */
-export async function signInWithGoogle(redirectUri: string): Promise<void> {
+export async function signInWithGoogle(litAuthClient: LitAuthClient, redirectUri: string): Promise<void> {
   const googleProvider = litAuthClient.initProvider<GoogleProvider>(
     ProviderType.Google,
     { redirectUri }
@@ -61,6 +46,7 @@ export async function signInWithGoogle(redirectUri: string): Promise<void> {
  * Get auth method object from redirect
  */
 export async function authenticateWithGoogle(
+  litAuthClient: LitAuthClient,
   redirectUri: string
 ): Promise<AuthMethod | undefined> {
   const googleProvider = litAuthClient.initProvider<GoogleProvider>(
@@ -74,7 +60,7 @@ export async function authenticateWithGoogle(
 /**
  * Redirect to Lit login
  */
-export async function signInWithDiscord(redirectUri: string): Promise<void> {
+export async function signInWithDiscord(litAuthClient: LitAuthClient, redirectUri: string): Promise<void> {
   const discordProvider = litAuthClient.initProvider<DiscordProvider>(
     ProviderType.Discord,
     { redirectUri }
@@ -86,6 +72,7 @@ export async function signInWithDiscord(redirectUri: string): Promise<void> {
  * Get auth method object from redirect
  */
 export async function authenticateWithDiscord(
+  litAuthClient: LitAuthClient,
   redirectUri: string
 ): Promise<AuthMethod | undefined> {
   const discordProvider = litAuthClient.initProvider<DiscordProvider>(
@@ -100,6 +87,7 @@ export async function authenticateWithDiscord(
  * Get auth method object by signing a message with an Ethereum wallet
  */
 export async function authenticateWithEthWallet(
+  litAuthClient: LitAuthClient,
   address?: string,
   signMessage?: (message: string) => Promise<string>
 ): Promise<AuthMethod | undefined> {
@@ -120,7 +108,7 @@ export async function authenticateWithEthWallet(
 /**
  * Register new WebAuthn credential
  */
-export async function registerWebAuthn(): Promise<IRelayPKP> {
+export async function registerWebAuthn(litAuthClient: LitAuthClient): Promise<IRelayPKP> {
   const provider = litAuthClient.initProvider<WebAuthnProvider>(
     ProviderType.WebAuthn
   );
@@ -144,7 +132,7 @@ export async function registerWebAuthn(): Promise<IRelayPKP> {
 /**
  * Get auth method object by authenticating with a WebAuthn credential
  */
-export async function authenticateWithWebAuthn(): Promise<
+export async function authenticateWithWebAuthn(litAuthClient: LitAuthClient): Promise<
   AuthMethod | undefined
 > {
   let provider = litAuthClient.getProvider(ProviderType.WebAuthn);
@@ -161,6 +149,7 @@ export async function authenticateWithWebAuthn(): Promise<
  * Get auth method object by validating Stytch JWT
  */
 export async function authenticateWithStytch(
+  litAuthClient: LitAuthClient,
   accessToken: string,
   userId?: string,
   method?: string
@@ -185,15 +174,17 @@ export async function authenticateWithStytch(
  * Generate session sigs for given params
  */
 export async function getSessionSigs({
+  litAuthClient,
   pkpPublicKey,
   authMethod,
-  sessionSigsParams,
+  sessionSigsParams
 }: {
+  litAuthClient: LitAuthClient,
   pkpPublicKey: string;
   authMethod: AuthMethod;
   sessionSigsParams: GetSessionSigsProps;
 }): Promise<SessionSigs> {
-  const provider = getProviderByAuthMethod(authMethod);
+  const provider = getProviderByAuthMethod(litAuthClient, authMethod);
   if (provider) {
     const sessionSigs = await provider.getSessionSigs({
       pkpPublicKey,
@@ -208,18 +199,11 @@ export async function getSessionSigs({
   }
 }
 
-export async function updateSessionSigs(
-  params: GetSessionSigsProps
-): Promise<SessionSigs> {
-  const sessionSigs = await litNodeClient.getSessionSigs(params);
-  return sessionSigs;
-}
-
 /**
  * Fetch PKPs associated with given auth method
  */
-export async function getPKPs(authMethod: AuthMethod): Promise<IRelayPKP[]> {
-  const provider = getProviderByAuthMethod(authMethod);
+export async function getPKPs(litAuthClient: LitAuthClient, authMethod: AuthMethod): Promise<IRelayPKP[]> {
+  const provider = getProviderByAuthMethod(litAuthClient, authMethod);
   const allPKPs = await provider.fetchPKPsThroughRelayer(authMethod);
   return allPKPs;
 }
@@ -227,8 +211,8 @@ export async function getPKPs(authMethod: AuthMethod): Promise<IRelayPKP[]> {
 /**
  * Mint a new PKP for current auth method
  */
-export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
-  const provider = getProviderByAuthMethod(authMethod);
+export async function mintPKP(litAuthClient: LitAuthClient, authMethod: AuthMethod): Promise<IRelayPKP> {
+  const provider = getProviderByAuthMethod(litAuthClient, authMethod);
   // Set scope of signing any data
   const options = {
     permittedAuthMethodScopes: [[AuthMethodScope.SignAnything]],
@@ -264,7 +248,7 @@ export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
 /**
  * Get provider for given auth method
  */
-function getProviderByAuthMethod(authMethod: AuthMethod) {
+function getProviderByAuthMethod(litAuthClient: LitAuthClient, authMethod: AuthMethod) {
   switch (authMethod.authMethodType) {
     case AuthMethodType.GoogleJwt:
       return litAuthClient.getProvider(ProviderType.Google);

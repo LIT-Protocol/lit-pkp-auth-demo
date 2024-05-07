@@ -4,6 +4,7 @@ import { getSessionSigs } from '../utils/lit';
 import { LitAbility, LitActionResource } from '@lit-protocol/auth-helpers';
 import { IRelayPKP } from '@lit-protocol/types';
 import { SessionSigs } from '@lit-protocol/types';
+import { LitAuthClient } from '@lit-protocol/lit-auth-client';
 
 export default function useSession() {
   const [sessionSigs, setSessionSigs] = useState<SessionSigs>();
@@ -14,7 +15,7 @@ export default function useSession() {
    * Generate session sigs and store new session data
    */
   const initSession = useCallback(
-    async (authMethod: AuthMethod, pkp: IRelayPKP): Promise<void> => {
+    async (litAuthClient: LitAuthClient, authMethod: AuthMethod, pkp: IRelayPKP): Promise<void> => {
       setLoading(true);
       setError(undefined);
       try {
@@ -32,6 +33,7 @@ export default function useSession() {
 
         // Generate session sigs
         const sessionSigs = await getSessionSigs({
+          litAuthClient,
           pkpPublicKey: pkp.publicKey,
           authMethod,
           //@ts-ignore

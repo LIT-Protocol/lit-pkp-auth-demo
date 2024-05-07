@@ -2,12 +2,14 @@ import { useCallback, useState } from 'react';
 import { AuthMethod } from '@lit-protocol/types';
 import { getPKPs, mintPKP } from '../utils/lit';
 import { IRelayPKP } from '@lit-protocol/types';
+import { useLit } from './useLit';
 
 export default function useAccounts() {
   const [accounts, setAccounts] = useState<IRelayPKP[]>([]);
   const [currentAccount, setCurrentAccount] = useState<IRelayPKP>();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error>();
+  const { litAuthClient } = useLit();
 
   /**
    * Fetch PKPs tied to given auth method
@@ -18,7 +20,7 @@ export default function useAccounts() {
       setError(undefined);
       try {
         // Fetch PKPs tied to given auth method
-        const myPKPs = await getPKPs(authMethod);
+        const myPKPs = await getPKPs(litAuthClient, authMethod);
         // console.log('fetchAccounts pkps: ', myPKPs);
         setAccounts(myPKPs);
         // If only one PKP, set as current account
@@ -31,7 +33,7 @@ export default function useAccounts() {
         setLoading(false);
       }
     },
-    []
+    [litAuthClient]
   );
 
   /**
@@ -42,7 +44,7 @@ export default function useAccounts() {
       setLoading(true);
       setError(undefined);
       try {
-        const newPKP = await mintPKP(authMethod);
+        const newPKP = await mintPKP(litAuthClient, authMethod);
         // console.log('createAccount pkp: ', newPKP);
         setAccounts(prev => [...prev, newPKP]);
         setCurrentAccount(newPKP);
@@ -52,7 +54,7 @@ export default function useAccounts() {
         setLoading(false);
       }
     },
-    []
+    [litAuthClient]
   );
 
   return {

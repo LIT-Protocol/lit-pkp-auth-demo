@@ -12,8 +12,10 @@ import {
   authenticateWithStytch,
 } from '../utils/lit';
 import { useConnect } from 'wagmi';
+import { useLit } from './useLit';
 
 export default function useAuthenticate(redirectUri?: string) {
+  const { litAuthClient } = useLit();
   const [authMethod, setAuthMethod] = useState<AuthMethod>();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error>();
@@ -35,6 +37,7 @@ export default function useAuthenticate(redirectUri?: string) {
 
     try {
       const result: AuthMethod = (await authenticateWithGoogle(
+        litAuthClient,
         redirectUri as any
       )) as any;
       setAuthMethod(result);
@@ -43,7 +46,7 @@ export default function useAuthenticate(redirectUri?: string) {
     } finally {
       setLoading(false);
     }
-  }, [redirectUri]);
+  }, [litAuthClient, redirectUri]);
 
   /**
    * Handle redirect from Discord OAuth
@@ -55,6 +58,7 @@ export default function useAuthenticate(redirectUri?: string) {
 
     try {
       const result: AuthMethod = (await authenticateWithDiscord(
+        litAuthClient,
         redirectUri as any
       )) as any;
       setAuthMethod(result);
@@ -63,7 +67,7 @@ export default function useAuthenticate(redirectUri?: string) {
     } finally {
       setLoading(false);
     }
-  }, [redirectUri]);
+  }, [litAuthClient, redirectUri]);
 
   /**
    * Authenticate with Ethereum wallet
@@ -84,6 +88,7 @@ export default function useAuthenticate(redirectUri?: string) {
           return sig;
         };
         const result: AuthMethod = await authenticateWithEthWallet(
+          litAuthClient,
           account,
           signMessage
         );
@@ -94,7 +99,7 @@ export default function useAuthenticate(redirectUri?: string) {
         setLoading(false);
       }
     },
-    [connectAsync]
+    [litAuthClient, connectAsync]
   );
 
   /**
@@ -107,7 +112,7 @@ export default function useAuthenticate(redirectUri?: string) {
       setAuthMethod(undefined);
 
       try {
-        const result: AuthMethod = await authenticateWithWebAuthn();
+        const result: AuthMethod = await authenticateWithWebAuthn(litAuthClient);
         setAuthMethod(result);
       } catch (err) {
         setError(err);
@@ -115,7 +120,7 @@ export default function useAuthenticate(redirectUri?: string) {
         setLoading(false);
       }
     },
-    []
+    [litAuthClient]
   );
 
   /**
@@ -129,6 +134,7 @@ export default function useAuthenticate(redirectUri?: string) {
 
       try {
         const result: AuthMethod = (await authenticateWithStytch(
+          litAuthClient,
           accessToken,
           userId,
           method
@@ -140,7 +146,7 @@ export default function useAuthenticate(redirectUri?: string) {
         setLoading(false);
       }
     },
-    []
+    [litAuthClient]
   );
 
   useEffect(() => {
