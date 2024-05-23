@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { use, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import useAuthenticate from '../hooks/useAuthenticate';
 import useSession from '../hooks/useSession';
@@ -13,6 +13,7 @@ import { AuthMethodType } from '@lit-protocol/constants';
 import SignUpMethods from '../components/SignUpMethods';
 import Dashboard from '../components/Dashboard';
 import Loading from '../components/Loading';
+import { useLit } from '../hooks/useLit';
 
 export default function SignUpView() {
   const redirectUri = ORIGIN;
@@ -39,19 +40,20 @@ export default function SignUpView() {
     error: sessionError,
   } = useSession();
   const router = useRouter();
+  const { litAuthClient } = useLit();
 
   const error = authError || accountsError || sessionError;
 
   async function handleGoogleLogin() {
-    await signInWithGoogle(redirectUri);
+    await signInWithGoogle(litAuthClient, redirectUri);
   }
 
   async function handleDiscordLogin() {
-    await signInWithDiscord(redirectUri);
+    await signInWithDiscord(litAuthClient, redirectUri);
   }
 
   async function registerWithWebAuthn() {
-    const newPKP = await registerWebAuthn();
+    const newPKP = await registerWebAuthn(litAuthClient);
     if (newPKP) {
       setCurrentAccount(newPKP);
     }
@@ -69,7 +71,7 @@ export default function SignUpView() {
   useEffect(() => {
     // If user is authenticated and has at least one account, initialize session
     if (authMethod && currentAccount) {
-      initSession(authMethod, currentAccount);
+      initSession(litAuthClient, authMethod, currentAccount);
     }
   }, [authMethod, currentAccount, initSession]);
 

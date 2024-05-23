@@ -9,6 +9,8 @@ import { StytchProvider } from '@stytch/nextjs';
 import { createStytchUIClient } from '@stytch/nextjs/ui';
 import { Albert_Sans } from 'next/font/google';
 import Image from 'next/image';
+import { LitProvider } from '../contexts/LitProvider';
+import { LitNodeClientConfig } from '@lit-protocol/types';
 
 const { provider, chains } = configureChains(
   [mainnet, goerli, optimism],
@@ -38,37 +40,45 @@ const stytch = createStytchUIClient(
   process.env.NEXT_PUBLIC_STYTCH_PUBLIC_TOKEN || ''
 );
 
+const litClientConfig: LitNodeClientConfig = {
+  alertWhenUnauthorized: false,
+  litNetwork: 'habanero',
+  debug: true,
+};
+
 const font = Albert_Sans({ subsets: ['latin'] });
 
 export default function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <StytchProvider stytch={stytch}>
-      <WagmiConfig client={client}>
-        <header>
-          <Image src="/lit.svg" alt="Lit logo" width={32} height={32}></Image>
-          <a
-            href="https://developer.litprotocol.com/?ref=demo.getlit.dev"
-            target="_blank"
-            rel="noopener nofollow"
-            className="lit-cta"
-          >
-            Build on Lit
-          </a>
-        </header>
-        <main className={font.className}>
-          <Component {...pageProps} />
-        </main>
-        <footer>
-          <a
-            href="https://github.com/LIT-Protocol/pkp-social-auth-example"
-            target="_blank"
-            rel="noopener nofollow"
-            className="footer-link"
-          >
-            View the source code
-          </a>
-        </footer>
-      </WagmiConfig>
-    </StytchProvider>
+    <LitProvider clientConfig={litClientConfig}>
+      <StytchProvider stytch={stytch}>
+        <WagmiConfig client={client}>
+          <header>
+            <Image src="/lit.svg" alt="Lit logo" width={32} height={32}></Image>
+            <a
+              href="https://developer.litprotocol.com/?ref=demo.getlit.dev"
+              target="_blank"
+              rel="noopener nofollow"
+              className="lit-cta"
+            >
+              Build on Lit
+            </a>
+          </header>
+          <main className={font.className}>
+            <Component {...pageProps} />
+          </main>
+          <footer>
+            <a
+              href="https://github.com/LIT-Protocol/pkp-social-auth-example"
+              target="_blank"
+              rel="noopener nofollow"
+              className="footer-link"
+            >
+              View the source code
+            </a>
+          </footer>
+        </WagmiConfig>
+      </StytchProvider>
+    </LitProvider>
   );
 }
