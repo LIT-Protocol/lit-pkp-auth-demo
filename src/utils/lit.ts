@@ -19,6 +19,7 @@ import {
   SessionSigs,
   AuthCallbackParams,
 } from '@lit-protocol/types';
+import { LitNetwork } from '@lit-protocol/constants';
 
 export const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'localhost';
 export const ORIGIN =
