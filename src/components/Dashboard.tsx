@@ -1,10 +1,10 @@
-import { AuthMethod, IRelayPKP, SessionSigs } from '@lit-protocol/types';
+import { IRelayPKP, SessionSigs } from '@lit-protocol/types';
 import { ethers } from 'ethers';
 import { useState } from 'react';
 import { PKPEthersWallet } from '@lit-protocol/pkp-ethers';
 import { useRouter } from 'next/router';
 import { useDisconnect } from 'wagmi';
-import { AuthMethodType } from '@lit-protocol/constants';
+import { litNodeClient } from '../utils/lit';
 
 interface DashboardProps {
   currentAccount: IRelayPKP;
@@ -32,10 +32,14 @@ export default function Dashboard({
     setLoading(true);
 
     try {
+      await litNodeClient.connect();
+
       const pkpWallet = new PKPEthersWallet({
         controllerSessionSigs: sessionSigs,
         pkpPubKey: currentAccount.publicKey,
+        litNodeClient: litNodeClient,
       });
+
       await pkpWallet.init();
 
       const signature = await pkpWallet.signMessage(message);
@@ -60,7 +64,7 @@ export default function Dashboard({
   async function handleLogout() {
     try {
       await disconnectAsync();
-    } catch (err) {}
+    } catch (err) { }
     localStorage.removeItem('lit-wallet-sig');
     router.reload();
   }
@@ -83,9 +87,8 @@ export default function Dashboard({
         <button
           onClick={signMessageWithPKP}
           disabled={loading}
-          className={`btn ${
-            signature ? (verified ? 'btn--success' : 'btn--error') : ''
-          } ${loading && 'btn--loading'}`}
+          className={`btn ${signature ? (verified ? 'btn--success' : 'btn--error') : ''
+            } ${loading && 'btn--loading'}`}
         >
           {signature ? (
             verified ? (

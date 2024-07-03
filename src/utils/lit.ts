@@ -18,8 +18,10 @@ import {
   IRelayPKP,
   SessionSigs,
   AuthCallbackParams,
+  LitAbility,
 } from '@lit-protocol/types';
 import { LitNetwork } from '@lit-protocol/constants';
+import { LitPKPResource } from '@lit-protocol/auth-helpers';
 
 export const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'localhost';
 export const ORIGIN =
@@ -196,10 +198,16 @@ export async function getSessionSigs({
 }): Promise<SessionSigs> {
   const provider = getProviderByAuthMethod(authMethod);
   if (provider) {
-    const sessionSigs = await provider.getSessionSigs({
+    await litNodeClient.connect();
+    const sessionSigs = await litNodeClient.getPkpSessionSigs({
       pkpPublicKey,
-      authMethod,
-      sessionSigsParams,
+      authMethods: [authMethod],
+      resourceAbilityRequests: [
+        {
+          resource: new LitPKPResource('*'),
+          ability: LitAbility.PKPSigning,
+        }
+      ]
     });
     return sessionSigs;
   } else {
