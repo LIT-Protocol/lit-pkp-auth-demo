@@ -35,6 +35,8 @@ export const litNodeClient: LitNodeClient = new LitNodeClient({
   debug: true,
 });
 
+litNodeClient.connect();
+
 export const litAuthClient: LitAuthClient = new LitAuthClient({
   litRelayConfig: {
     relayApiKey: 'test-api-key',
