@@ -211,6 +211,7 @@ export async function getSessionSigs({
         }
       ]
     });
+
     return sessionSigs;
   } else {
     throw new Error(
@@ -260,15 +261,32 @@ export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
     txHash = await provider.mintPKPThroughRelayer(authMethod, options);
   }
 
-  const response = await provider.relay.pollRequestUntilTerminalState(txHash);
-  if (response.status !== 'Succeeded') {
+  let attempts = 3;
+  let response = null;
+
+  while (attempts > 0) {
+    try {
+      response = await provider.relay.pollRequestUntilTerminalState(txHash);
+      break;
+    } catch (err) {
+      console.warn('Minting failed, retrying...', err);
+
+      // give it a second before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts--;
+    }
+  }
+
+  if (!response || response.status !== 'Succeeded') {
     throw new Error('Minting failed');
   }
+
   const newPKP: IRelayPKP = {
     tokenId: response.pkpTokenId,
     publicKey: response.pkpPublicKey,
     ethAddress: response.pkpEthAddress,
   };
+
   return newPKP;
 }
 
