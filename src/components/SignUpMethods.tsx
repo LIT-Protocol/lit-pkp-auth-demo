@@ -4,6 +4,7 @@ import AuthMethods from './AuthMethods';
 import WalletMethods from './WalletMethods';
 import WebAuthn from './WebAuthn';
 import StytchOTP from './StytchOTP';
+import { SELECTED_LIT_NETWORK } from '../utils/lit';
 
 interface SignUpProps {
   handleGoogleLogin: () => Promise<void>;
@@ -40,7 +41,7 @@ export default function SignUpMethods({
         )}
         {view === 'default' && (
           <>
-            <h1>Get started</h1>
+            <h1>Get started on the {SELECTED_LIT_NETWORK} network</h1>
             <p>
               Create a wallet that is secured by accounts you already have. With
               Lit-powered programmable MPC wallets, you won&apos;t have to worry

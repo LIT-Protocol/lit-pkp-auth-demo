@@ -10,6 +10,7 @@ import { LitNodeClient } from '@lit-protocol/lit-node-client';
 import {
   AuthMethodScope,
   AuthMethodType,
+  LIT_NETWORK,
   ProviderType,
 } from '@lit-protocol/constants';
 import {
@@ -19,8 +20,8 @@ import {
   SessionSigs,
   AuthCallbackParams,
   LitAbility,
+  LIT_NETWORKS_KEYS,
 } from '@lit-protocol/types';
-import { LitNetwork } from '@lit-protocol/constants';
 import { LitPKPResource } from '@lit-protocol/auth-helpers';
 
 export const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'localhost';
@@ -29,9 +30,13 @@ export const ORIGIN =
     ? `https://${DOMAIN}`
     : `http://${DOMAIN}:3000`;
 
+export const SELECTED_LIT_NETWORK = ((process.env
+  .NEXT_PUBLIC_LIT_NETWORK as string) ||
+  LIT_NETWORK.DatilDev) as LIT_NETWORKS_KEYS;
+
 export const litNodeClient: LitNodeClient = new LitNodeClient({
   alertWhenUnauthorized: false,
-  litNetwork: 'datil-dev',
+  litNetwork: SELECTED_LIT_NETWORK,
   debug: true,
 });
 
@@ -170,14 +175,14 @@ export async function authenticateWithStytch(
   userId?: string,
   method?: string
 ) {
-  let provider: BaseProvider
-  if (method === "email") {
+  let provider: BaseProvider;
+  if (method === 'email') {
     provider = litAuthClient.initProvider(ProviderType.StytchEmailFactorOtp, {
       appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID,
     });
   } else {
     provider = litAuthClient.initProvider(ProviderType.StytchSmsFactorOtp, {
-      appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID
+      appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID,
     });
   }
 
@@ -208,8 +213,8 @@ export async function getSessionSigs({
         {
           resource: new LitPKPResource('*'),
           ability: LitAbility.PKPSigning,
-        }
-      ]
+        },
+      ],
     });
 
     return sessionSigs;
