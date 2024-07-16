@@ -42,6 +42,20 @@ export default function SignUpView() {
 
   const error = authError || accountsError || sessionError;
 
+  if (error) {
+    if (authError) {
+      console.error('Auth error:', authError);
+    }
+
+    if (accountsError) {
+      console.error('Accounts error:', accountsError);
+    }
+
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+    }
+  }
+
   async function handleGoogleLogin() {
     await signInWithGoogle(redirectUri);
   }

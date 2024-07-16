@@ -10,6 +10,7 @@ import { LitNodeClient } from '@lit-protocol/lit-node-client';
 import {
   AuthMethodScope,
   AuthMethodType,
+  LIT_NETWORK,
   ProviderType,
 } from '@lit-protocol/constants';
 import {
@@ -18,7 +19,10 @@ import {
   IRelayPKP,
   SessionSigs,
   AuthCallbackParams,
+  LitAbility,
+  LIT_NETWORKS_KEYS,
 } from '@lit-protocol/types';
+import { LitPKPResource } from '@lit-protocol/auth-helpers';
 
 export const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'localhost';
 export const ORIGIN =
@@ -26,11 +30,17 @@ export const ORIGIN =
     ? `https://${DOMAIN}`
     : `http://${DOMAIN}:3000`;
 
+export const SELECTED_LIT_NETWORK = ((process.env
+  .NEXT_PUBLIC_LIT_NETWORK as string) ||
+  LIT_NETWORK.DatilDev) as LIT_NETWORKS_KEYS;
+
 export const litNodeClient: LitNodeClient = new LitNodeClient({
   alertWhenUnauthorized: false,
-  litNetwork: 'cayenne',
+  litNetwork: SELECTED_LIT_NETWORK,
   debug: true,
 });
+
+litNodeClient.connect();
 
 export const litAuthClient: LitAuthClient = new LitAuthClient({
   litRelayConfig: {
@@ -165,14 +175,14 @@ export async function authenticateWithStytch(
   userId?: string,
   method?: string
 ) {
-  let provider: BaseProvider
-  if (method === "email") {
+  let provider: BaseProvider;
+  if (method === 'email') {
     provider = litAuthClient.initProvider(ProviderType.StytchEmailFactorOtp, {
       appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID,
     });
   } else {
     provider = litAuthClient.initProvider(ProviderType.StytchSmsFactorOtp, {
-      appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID
+      appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID,
     });
   }
 
@@ -195,11 +205,18 @@ export async function getSessionSigs({
 }): Promise<SessionSigs> {
   const provider = getProviderByAuthMethod(authMethod);
   if (provider) {
-    const sessionSigs = await provider.getSessionSigs({
+    await litNodeClient.connect();
+    const sessionSigs = await litNodeClient.getPkpSessionSigs({
       pkpPublicKey,
-      authMethod,
-      sessionSigsParams,
+      authMethods: [authMethod],
+      resourceAbilityRequests: [
+        {
+          resource: new LitPKPResource('*'),
+          ability: LitAbility.PKPSigning,
+        },
+      ],
     });
+
     return sessionSigs;
   } else {
     throw new Error(
@@ -249,15 +266,32 @@ export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
     txHash = await provider.mintPKPThroughRelayer(authMethod, options);
   }
 
-  const response = await provider.relay.pollRequestUntilTerminalState(txHash);
-  if (response.status !== 'Succeeded') {
+  let attempts = 3;
+  let response = null;
+
+  while (attempts > 0) {
+    try {
+      response = await provider.relay.pollRequestUntilTerminalState(txHash);
+      break;
+    } catch (err) {
+      console.warn('Minting failed, retrying...', err);
+
+      // give it a second before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts--;
+    }
+  }
+
+  if (!response || response.status !== 'Succeeded') {
     throw new Error('Minting failed');
   }
+
   const newPKP: IRelayPKP = {
     tokenId: response.pkpTokenId,
     publicKey: response.pkpPublicKey,
     ethAddress: response.pkpEthAddress,
   };
+
   return newPKP;
 }
 
