@@ -1,28 +1,26 @@
-import {
-  DiscordProvider,
-  GoogleProvider,
-  EthWalletProvider,
-  WebAuthnProvider,
-  LitAuthClient,
-  BaseProvider,
-} from '@lit-protocol/lit-auth-client';
-import { LitNodeClient } from '@lit-protocol/lit-node-client';
+import { LitPKPResource } from '@lit-protocol/auth-helpers';
 import {
   AuthMethodScope,
   AuthMethodType,
-  LIT_NETWORK,
-  ProviderType,
+  LitNetwork,
 } from '@lit-protocol/constants';
+import {
+  BaseProvider,
+  DiscordProvider,
+  EthWalletProvider,
+  GoogleProvider,
+  LitRelay,
+  StytchAuthFactorOtpProvider,
+  WebAuthnProvider,
+} from '@lit-protocol/lit-auth-client';
+import { LitNodeClient } from '@lit-protocol/lit-node-client';
 import {
   AuthMethod,
   GetSessionSigsProps,
   IRelayPKP,
-  SessionSigs,
-  AuthCallbackParams,
   LitAbility,
-  LIT_NETWORKS_KEYS,
+  SessionSigs,
 } from '@lit-protocol/types';
-import { LitPKPResource } from '@lit-protocol/auth-helpers';
 
 export const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'localhost';
 export const ORIGIN =
@@ -32,38 +30,124 @@ export const ORIGIN =
 
 export const SELECTED_LIT_NETWORK = ((process.env
   .NEXT_PUBLIC_LIT_NETWORK as string) ||
-  LIT_NETWORK.DatilDev) as LIT_NETWORKS_KEYS;
+  LitNetwork.DatilDev) as LitNetwork;
 
 export const litNodeClient: LitNodeClient = new LitNodeClient({
   alertWhenUnauthorized: false,
   litNetwork: SELECTED_LIT_NETWORK,
   debug: true,
 });
-
 litNodeClient.connect();
 
-export const litAuthClient: LitAuthClient = new LitAuthClient({
-  litRelayConfig: {
-    relayApiKey: 'test-api-key',
-  },
-  litNodeClient,
+const litRelay = new LitRelay({
+  relayUrl: LitRelay.getRelayUrl(SELECTED_LIT_NETWORK),
+  relayApiKey: 'test-api-key',
 });
 
 /**
- * Validate provider
+ * Setting all available providers
  */
-export function isSocialLoginSupported(provider: string): boolean {
-  return ['google', 'discord'].includes(provider);
+let googleProvider: GoogleProvider;
+let discordProvider: DiscordProvider;
+let ethWalletProvider: EthWalletProvider;
+let webAuthnProvider: WebAuthnProvider;
+let stytchEmailOtpProvider: StytchAuthFactorOtpProvider<'email'>;
+let stytchSmsOtpProvider: StytchAuthFactorOtpProvider<'sms'>;
+
+/**
+ * Get the provider that is authenticated with the given auth method
+ */
+function getAuthenticatedProvider(authMethod: AuthMethod): BaseProvider {
+  const providers = {
+    [AuthMethodType.GoogleJwt]: googleProvider,
+    [AuthMethodType.Discord]: discordProvider,
+    [AuthMethodType.EthWallet]: ethWalletProvider,
+    [AuthMethodType.WebAuthn]: webAuthnProvider,
+    [AuthMethodType.StytchEmailFactorOtp]: stytchEmailOtpProvider,
+    [AuthMethodType.StytchSmsFactorOtp]: stytchSmsOtpProvider,
+  };
+
+  return providers[authMethod.authMethodType];
+}
+
+function getGoogleProvider(redirectUri: string) {
+  if (!googleProvider) {
+    googleProvider = new GoogleProvider({
+      relay: litRelay,
+      litNodeClient,
+      redirectUri,
+    });
+  }
+
+  return googleProvider;
+}
+function getDiscordProvider(redirectUri: string) {
+  if (!discordProvider) {
+    discordProvider = new DiscordProvider({
+      relay: litRelay,
+      litNodeClient,
+      redirectUri,
+    });
+  }
+
+  return discordProvider;
+}
+function getEthWalletProvider() {
+  if (!ethWalletProvider) {
+    ethWalletProvider = new EthWalletProvider({
+      relay: litRelay,
+      litNodeClient,
+      domain: DOMAIN,
+      origin: ORIGIN,
+    });
+  }
+
+  return ethWalletProvider;
+}
+function getWebAuthnProvider() {
+  if (!webAuthnProvider) {
+    webAuthnProvider = new WebAuthnProvider({
+      relay: litRelay,
+      litNodeClient,
+    });
+  }
+
+  return webAuthnProvider;
+}
+function getStytchEmailOtpProvider() {
+  if (!stytchEmailOtpProvider) {
+    stytchEmailOtpProvider = new StytchAuthFactorOtpProvider<'email'>(
+      {
+        relay: litRelay,
+        litNodeClient,
+      },
+      { appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID },
+      'email',
+    );
+  }
+
+  return stytchEmailOtpProvider;
+}
+function getStytchSmsOtpProvider() {
+  if (!stytchSmsOtpProvider) {
+    stytchSmsOtpProvider = new StytchAuthFactorOtpProvider<'sms'>(
+      {
+        relay: litRelay,
+        litNodeClient,
+      },
+      { appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID },
+      'sms',
+    );
+  }
+
+  return stytchSmsOtpProvider;
 }
 
 /**
  * Redirect to Lit login
  */
 export async function signInWithGoogle(redirectUri: string): Promise<void> {
-  const googleProvider = litAuthClient.initProvider<GoogleProvider>(
-    ProviderType.Google,
-    { redirectUri }
-  );
+  const googleProvider = getGoogleProvider(redirectUri);
   await googleProvider.signIn();
 }
 
@@ -72,11 +156,8 @@ export async function signInWithGoogle(redirectUri: string): Promise<void> {
  */
 export async function authenticateWithGoogle(
   redirectUri: string
-): Promise<AuthMethod | undefined> {
-  const googleProvider = litAuthClient.initProvider<GoogleProvider>(
-    ProviderType.Google,
-    { redirectUri }
-  );
+): Promise<AuthMethod> {
+  const googleProvider = getGoogleProvider(redirectUri);
   const authMethod = await googleProvider.authenticate();
   return authMethod;
 }
@@ -85,10 +166,7 @@ export async function authenticateWithGoogle(
  * Redirect to Lit login
  */
 export async function signInWithDiscord(redirectUri: string): Promise<void> {
-  const discordProvider = litAuthClient.initProvider<DiscordProvider>(
-    ProviderType.Discord,
-    { redirectUri }
-  );
+  const discordProvider = getDiscordProvider(redirectUri);
   await discordProvider.signIn();
 }
 
@@ -97,11 +175,8 @@ export async function signInWithDiscord(redirectUri: string): Promise<void> {
  */
 export async function authenticateWithDiscord(
   redirectUri: string
-): Promise<AuthMethod | undefined> {
-  const discordProvider = litAuthClient.initProvider<DiscordProvider>(
-    ProviderType.Discord,
-    { redirectUri }
-  );
+): Promise<AuthMethod> {
+  const discordProvider = getDiscordProvider(redirectUri);
   const authMethod = await discordProvider.authenticate();
   return authMethod;
 }
@@ -112,34 +187,25 @@ export async function authenticateWithDiscord(
 export async function authenticateWithEthWallet(
   address?: string,
   signMessage?: (message: string) => Promise<string>
-): Promise<AuthMethod | undefined> {
-  const ethWalletProvider = litAuthClient.initProvider<EthWalletProvider>(
-    ProviderType.EthWallet,
-    {
-      domain: DOMAIN,
-      origin: ORIGIN,
-    }
-  );
-  const authMethod = await ethWalletProvider.authenticate({
+): Promise<AuthMethod> {
+  const ethWalletProvider = getEthWalletProvider();
+  return await ethWalletProvider.authenticate({
     address,
     signMessage,
   });
-  return authMethod;
 }
 
 /**
  * Register new WebAuthn credential
  */
 export async function registerWebAuthn(): Promise<IRelayPKP> {
-  const provider = litAuthClient.initProvider<WebAuthnProvider>(
-    ProviderType.WebAuthn
-  );
+  const webAuthnProvider = getWebAuthnProvider();
   // Register new WebAuthn credential
-  const options = await provider.register();
+  const options = await webAuthnProvider.register();
 
   // Verify registration and mint PKP through relay server
-  const txHash = await provider.verifyAndMintPKPThroughRelayer(options);
-  const response = await provider.relay.pollRequestUntilTerminalState(txHash);
+  const txHash = await webAuthnProvider.verifyAndMintPKPThroughRelayer(options);
+  const response = await webAuthnProvider.relay.pollRequestUntilTerminalState(txHash);
   if (response.status !== 'Succeeded') {
     throw new Error('Minting failed');
   }
@@ -154,17 +220,9 @@ export async function registerWebAuthn(): Promise<IRelayPKP> {
 /**
  * Get auth method object by authenticating with a WebAuthn credential
  */
-export async function authenticateWithWebAuthn(): Promise<
-  AuthMethod | undefined
-> {
-  let provider = litAuthClient.getProvider(ProviderType.WebAuthn);
-  if (!provider) {
-    provider = litAuthClient.initProvider<WebAuthnProvider>(
-      ProviderType.WebAuthn
-    );
-  }
-  const authMethod = await provider.authenticate();
-  return authMethod;
+export async function authenticateWithWebAuthn(): Promise<AuthMethod> {
+  const webAuthnProvider = getWebAuthnProvider();
+  return await webAuthnProvider.authenticate();
 }
 
 /**
@@ -174,21 +232,10 @@ export async function authenticateWithStytch(
   accessToken: string,
   userId?: string,
   method?: string
-) {
-  let provider: BaseProvider;
-  if (method === 'email') {
-    provider = litAuthClient.initProvider(ProviderType.StytchEmailFactorOtp, {
-      appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID,
-    });
-  } else {
-    provider = litAuthClient.initProvider(ProviderType.StytchSmsFactorOtp, {
-      appId: process.env.NEXT_PUBLIC_STYTCH_PROJECT_ID,
-    });
-  }
+): Promise<AuthMethod> {
+  const provider = method === 'email' ? getStytchEmailOtpProvider() : getStytchSmsOtpProvider();
 
-  // @ts-ignore
-  const authMethod = await provider?.authenticate({ accessToken, userId });
-  return authMethod;
+  return await provider?.authenticate({ accessToken, userId });
 }
 
 /**
@@ -203,26 +250,20 @@ export async function getSessionSigs({
   authMethod: AuthMethod;
   sessionSigsParams: GetSessionSigsProps;
 }): Promise<SessionSigs> {
-  const provider = getProviderByAuthMethod(authMethod);
-  if (provider) {
-    await litNodeClient.connect();
-    const sessionSigs = await litNodeClient.getPkpSessionSigs({
-      pkpPublicKey,
-      authMethods: [authMethod],
-      resourceAbilityRequests: [
-        {
-          resource: new LitPKPResource('*'),
-          ability: LitAbility.PKPSigning,
-        },
-      ],
-    });
+  await litNodeClient.connect();
+  const sessionSigs = await litNodeClient.getPkpSessionSigs({
+    ...sessionSigsParams,
+    pkpPublicKey,
+    authMethods: [authMethod],
+    resourceAbilityRequests: [
+      {
+        resource: new LitPKPResource('*'),
+        ability: LitAbility.PKPSigning,
+      },
+    ],
+  });
 
-    return sessionSigs;
-  } else {
-    throw new Error(
-      `Provider not found for auth method type ${authMethod.authMethodType}`
-    );
-  }
+  return sessionSigs;
 }
 
 export async function updateSessionSigs(
@@ -236,7 +277,7 @@ export async function updateSessionSigs(
  * Fetch PKPs associated with given auth method
  */
 export async function getPKPs(authMethod: AuthMethod): Promise<IRelayPKP[]> {
-  const provider = getProviderByAuthMethod(authMethod);
+  const provider = getAuthenticatedProvider(authMethod);
   const allPKPs = await provider.fetchPKPsThroughRelayer(authMethod);
   return allPKPs;
 }
@@ -245,7 +286,7 @@ export async function getPKPs(authMethod: AuthMethod): Promise<IRelayPKP[]> {
  * Mint a new PKP for current auth method
  */
 export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
-  const provider = getProviderByAuthMethod(authMethod);
+  const provider = getAuthenticatedProvider(authMethod);
   // Set scope of signing any data
   const options = {
     permittedAuthMethodScopes: [[AuthMethodScope.SignAnything]],
@@ -254,13 +295,13 @@ export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
   let txHash: string;
 
   if (authMethod.authMethodType === AuthMethodType.WebAuthn) {
+    // WebAuthn provider requires different steps
+    const webAuthnProvider = provider as WebAuthnProvider;
     // Register new WebAuthn credential
-    const webAuthnInfo = await (provider as WebAuthnProvider).register();
+    const webAuthnInfo = await webAuthnProvider.register();
 
     // Verify registration and mint PKP through relay server
-    txHash = await (
-      provider as WebAuthnProvider
-    ).verifyAndMintPKPThroughRelayer(webAuthnInfo, options);
+    txHash = await webAuthnProvider.verifyAndMintPKPThroughRelayer(webAuthnInfo, options);
   } else {
     // Mint PKP through relay server
     txHash = await provider.mintPKPThroughRelayer(authMethod, options);
@@ -293,26 +334,4 @@ export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
   };
 
   return newPKP;
-}
-
-/**
- * Get provider for given auth method
- */
-function getProviderByAuthMethod(authMethod: AuthMethod) {
-  switch (authMethod.authMethodType) {
-    case AuthMethodType.GoogleJwt:
-      return litAuthClient.getProvider(ProviderType.Google);
-    case AuthMethodType.Discord:
-      return litAuthClient.getProvider(ProviderType.Discord);
-    case AuthMethodType.EthWallet:
-      return litAuthClient.getProvider(ProviderType.EthWallet);
-    case AuthMethodType.WebAuthn:
-      return litAuthClient.getProvider(ProviderType.WebAuthn);
-    case AuthMethodType.StytchEmailFactorOtp:
-      return litAuthClient.getProvider(ProviderType.StytchEmailFactorOtp);
-    case AuthMethodType.StytchSmsFactorOtp:
-      return litAuthClient.getProvider(ProviderType.StytchSmsFactorOtp);
-    default:
-      return;
-  }
 }

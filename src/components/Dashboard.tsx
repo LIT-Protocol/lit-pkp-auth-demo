@@ -32,12 +32,10 @@ export default function Dashboard({
     setLoading(true);
 
     try {
-      await litNodeClient.connect();
-
       const pkpWallet = new PKPEthersWallet({
         controllerSessionSigs: sessionSigs,
         pkpPubKey: currentAccount.publicKey,
-        litNodeClient: litNodeClient,
+        litNodeClient,
       });
 
       await pkpWallet.init();
