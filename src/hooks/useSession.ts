@@ -32,6 +32,7 @@ export default function useSession() {
 
         // Generate session sigs
         const sessionSigs = await getSessionSigs({
+          pkpEthAddress: pkp.ethAddress,
           pkpPublicKey: pkp.publicKey,
           authMethod,
           //@ts-ignore

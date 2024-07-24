@@ -1,12 +1,4 @@
-import {
-  DiscordProvider,
-  GoogleProvider,
-  EthWalletProvider,
-  WebAuthnProvider,
-  LitAuthClient,
-  BaseProvider,
-} from '@lit-protocol/lit-auth-client';
-import { LitNodeClient } from '@lit-protocol/lit-node-client';
+import { LitPKPResource } from '@lit-protocol/auth-helpers';
 import {
   AuthMethodScope,
   AuthMethodType,
@@ -14,15 +6,23 @@ import {
   ProviderType,
 } from '@lit-protocol/constants';
 import {
+  BaseProvider,
+  DiscordProvider,
+  EthWalletProvider,
+  GoogleProvider,
+  LitAuthClient,
+  WebAuthnProvider,
+} from '@lit-protocol/lit-auth-client';
+import { LitNodeClient } from '@lit-protocol/lit-node-client';
+import {
   AuthMethod,
+  GetPkpSessionSigs,
   GetSessionSigsProps,
   IRelayPKP,
-  SessionSigs,
-  AuthCallbackParams,
-  LitAbility,
   LIT_NETWORKS_KEYS,
+  LitAbility,
+  SessionSigs,
 } from '@lit-protocol/types';
-import { LitPKPResource } from '@lit-protocol/auth-helpers';
 
 export const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || 'localhost';
 export const ORIGIN =
@@ -195,10 +195,12 @@ export async function authenticateWithStytch(
  * Generate session sigs for given params
  */
 export async function getSessionSigs({
+  pkpEthAddress,
   pkpPublicKey,
   authMethod,
   sessionSigsParams,
 }: {
+  pkpEthAddress: string;
   pkpPublicKey: string;
   authMethod: AuthMethod;
   sessionSigsParams: GetSessionSigsProps;
@@ -206,7 +208,8 @@ export async function getSessionSigs({
   const provider = getProviderByAuthMethod(authMethod);
   if (provider) {
     await litNodeClient.connect();
-    const sessionSigs = await litNodeClient.getPkpSessionSigs({
+
+    const pkpSessionSigsParams: GetPkpSessionSigs = {
       pkpPublicKey,
       authMethods: [authMethod],
       resourceAbilityRequests: [
@@ -215,9 +218,21 @@ export async function getSessionSigs({
           ability: LitAbility.PKPSigning,
         },
       ],
-    });
+    }
 
-    return sessionSigs;
+    if (['datil-test', 'habanero', 'manzano'].includes(SELECTED_LIT_NETWORK)) {
+      const capabilityAuthSigRes = await fetch(
+        `/api/capacity-delegation?address=${pkpEthAddress}`,
+        {
+          method: 'GET',
+        },
+      );
+      const { capacityDelegationAuthSig } = await capabilityAuthSigRes.json();
+
+      pkpSessionSigsParams.capabilityAuthSigs = [capacityDelegationAuthSig];
+    }
+
+    return await litNodeClient.getPkpSessionSigs(pkpSessionSigsParams);
   } else {
     throw new Error(
       `Provider not found for auth method type ${authMethod.authMethodType}`
