@@ -73,10 +73,15 @@ export async function signInWithGoogle(redirectUri: string): Promise<void> {
 export async function authenticateWithGoogle(
   redirectUri: string
 ): Promise<AuthMethod | undefined> {
+  if (litNodeClient.ready) {
+    await litNodeClient.connect();
+  }
+
   const googleProvider = litAuthClient.initProvider<GoogleProvider>(
     ProviderType.Google,
     { redirectUri }
   );
+
   const authMethod = await googleProvider.authenticate();
   return authMethod;
 }
@@ -98,6 +103,10 @@ export async function signInWithDiscord(redirectUri: string): Promise<void> {
 export async function authenticateWithDiscord(
   redirectUri: string
 ): Promise<AuthMethod | undefined> {
+  if (litNodeClient.ready) {
+    await litNodeClient.connect();
+  }
+
   const discordProvider = litAuthClient.initProvider<DiscordProvider>(
     ProviderType.Discord,
     { redirectUri }
@@ -113,6 +122,10 @@ export async function authenticateWithEthWallet(
   address?: string,
   signMessage?: (message: string) => Promise<string>
 ): Promise<AuthMethod | undefined> {
+  if (litNodeClient.ready) {
+    await litNodeClient.connect();
+  }
+
   const ethWalletProvider = litAuthClient.initProvider<EthWalletProvider>(
     ProviderType.EthWallet,
     {
@@ -157,6 +170,10 @@ export async function registerWebAuthn(): Promise<IRelayPKP> {
 export async function authenticateWithWebAuthn(): Promise<
   AuthMethod | undefined
 > {
+  if (litNodeClient.ready) {
+    await litNodeClient.connect();
+  }
+
   let provider = litAuthClient.getProvider(ProviderType.WebAuthn);
   if (!provider) {
     provider = litAuthClient.initProvider<WebAuthnProvider>(
@@ -175,6 +192,10 @@ export async function authenticateWithStytch(
   userId?: string,
   method?: string
 ) {
+  if (litNodeClient.ready) {
+    await litNodeClient.connect();
+  }
+
   let provider: BaseProvider;
   if (method === 'email') {
     provider = litAuthClient.initProvider(ProviderType.StytchEmailFactorOtp, {
