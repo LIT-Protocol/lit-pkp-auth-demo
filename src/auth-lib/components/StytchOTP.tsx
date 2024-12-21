@@ -1,4 +1,4 @@
-import React, { useState, Dispatch, SetStateAction, ReactElement } from 'react';
+import React, { useState, Dispatch, SetStateAction } from 'react';
 import { LoginView } from './LoginMethods';
 import { SignUpView } from './SignUpMethods';
 

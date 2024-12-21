@@ -4,7 +4,31 @@ const webpack = require('webpack');
 
 const nextConfig = {
   reactStrictMode: true,
-  webpack: (config, { isServer }) => {
+  experimental: {
+    esmExternals: true,
+  },
+  webpack: (config, { dev, isServer }) => {
+    // Disable HMR for node_modules
+    if (dev) {
+      config.watchOptions = {
+        ignored: ['**/node_modules']
+      };
+    }
+
+    // Add rule to handle import.meta
+    config.module.rules.push({
+      test: /\.m?js$/,
+      resolve: {
+        fullySpecified: false,
+      },
+      use: {
+        loader: 'babel-loader',
+        options: {
+          plugins: ['@babel/plugin-syntax-import-meta'],
+        },
+      },
+    });
+
     // Add rule to handle TypeScript files from auth-lib
     config.module.rules.push({
       test: /\.(ts|tsx)$/,
@@ -59,8 +83,8 @@ const nextConfig = {
 
     return config;
   },
-  // Ensure Next.js treats auth-lib as external package
-  transpilePackages: ['@lit-protocol/auth-lib'],
+  // Ensure Next.js treats auth-lib and ESM packages as external packages
+  transpilePackages: ['@lit-protocol/auth-lib', '@simplewebauthn/browser', '@lit-protocol/lit-auth-client'],
 };
 
 module.exports = nextConfig;

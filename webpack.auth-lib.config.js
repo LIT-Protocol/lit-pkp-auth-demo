@@ -1,10 +1,11 @@
 const path = require('path');
-const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
   mode: 'production',
-  entry: './src/auth-lib/index.ts',
+  context: path.resolve(__dirname, 'src/auth-lib'),
+  entry: './index.ts',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'litAuthLib.js',
@@ -55,15 +56,14 @@ module.exports = {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'babel-loader',
+            loader: 'ts-loader',
             options: {
-              presets: [
-                '@babel/preset-env',
-                '@babel/preset-react',
-                '@babel/preset-typescript',
-              ],
-            },
-          },
+              transpileOnly: true, // Skip type checking
+              compilerOptions: {
+                module: 'esnext',
+              }
+            }
+          }
         ],
       },
     ],

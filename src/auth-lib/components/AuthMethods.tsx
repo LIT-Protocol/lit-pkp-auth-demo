@@ -1,6 +1,6 @@
-import React, { Dispatch, SetStateAction, ReactElement } from 'react';
-import { LoginView } from './LoginMethods';
-import { SignUpView } from './SignUpMethods';
+import React, { Dispatch, SetStateAction } from 'react';
+import type { LoginView } from './LoginMethods';
+import type { SignUpView } from './SignUpMethods';
 
 export interface AuthMethodsLibProps {
   handleGoogleLogin: () => Promise<void>;

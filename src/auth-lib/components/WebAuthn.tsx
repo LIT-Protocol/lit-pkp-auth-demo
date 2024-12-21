@@ -1,4 +1,4 @@
-import React, { useState, ReactNode } from 'react';
+import React, { useState } from 'react';
 import type { LoginView } from './LoginMethods';
 import type { SignUpView } from './SignUpMethods';
 
@@ -16,7 +16,7 @@ export const WebAuthnLib = ({
   authWithWebAuthn,
   setView,
   registerWithWebAuthn,
-}: WebAuthnLibProps) => {
+}) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error>();
   const [step, setStep] = useState<WebAuthnStep>(start);

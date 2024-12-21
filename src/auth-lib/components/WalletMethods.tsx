@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
 import type { LoginView } from './LoginMethods';
 import type { SignUpView } from './SignUpMethods';
 
@@ -19,7 +19,7 @@ export const WalletMethodsLib = ({
   connectors,
   authWithEthWallet,
   setView,
-}: WalletMethodsLibProps): JSX.Element => {
+}) => {
   return (
     <div>
       <h1>Connect your web3 wallet</h1>
