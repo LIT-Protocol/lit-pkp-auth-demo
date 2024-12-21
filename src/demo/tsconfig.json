@@ -16,9 +16,17 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@lit-protocol/auth-lib": ["../auth-lib"],
+      "@lit-protocol/auth-lib/*": ["../auth-lib/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "../auth-lib/**/*.ts",
+    "../auth-lib/**/*.tsx"
+  ],
   "exclude": ["node_modules"]
 }
