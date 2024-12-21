@@ -1,6 +1,6 @@
 # Programmable MPC Wallets with Flexible Auth 🔑
 
-This is an example web app that shows how you can mint and use Lit's programmable MPC wallets with social accounts, one-time passwords, and passkeys using [Lit JS SDK](https://developer.litprotocol.com/v2/).
+This is an example web app that shows how you can mint and use Lit's programmable MPC wallets with social accounts, one-time passwords, and passkeys using [Lit JS SDK](https://developer.litprotocol.com/v2/). This repository is maintained by the Lit Protocol team.
 
 ## 💻 Getting Started
 
