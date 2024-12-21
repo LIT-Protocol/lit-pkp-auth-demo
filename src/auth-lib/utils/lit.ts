@@ -3,30 +3,29 @@ import {
   DiscordProvider,
   EthWalletProvider,
   WebAuthnProvider,
-  StytchOTPProvider,
-  LitAuthClient,
+  StytchOtpProvider,
 } from '@lit-protocol/lit-auth-client';
+import { LitAuthClient } from '@lit-protocol/lit-auth-client/src/lib/lit-auth-client';
+import { AuthMethodType, LIT_NETWORKS, ProviderType } from '@lit-protocol/constants';
+import { BaseProvider } from '@lit-protocol/lit-auth-client';
 import { LitNodeClient } from '@lit-protocol/lit-node-client';
 import {
-  AuthCallbackParams,
   AuthMethod,
   GetSessionSigsProps,
   IRelayPKP,
   SessionSigs,
-  ProviderType,
 } from '@lit-protocol/types';
-import { LitPKPResource } from '@lit-protocol/auth-helpers';
 
 export interface LitConfig {
   relayUrl?: string;
-  network?: string;
+  network?: keyof typeof LIT_NETWORKS;
   debug?: boolean;
   stytchProjectId?: string;
 }
 
 const defaultConfig: LitConfig = {
   relayUrl: 'https://relay-server-dev.herokuapp.com',
-  network: 'cayenne',
+  network: 'datil',
   debug: false
 };
 
@@ -64,13 +63,12 @@ export async function authenticateWithGoogle(redirectUri: string): Promise<AuthM
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
 
-  const googleProvider = litAuthClient.initProvider<GoogleProvider>(
-    ProviderType.Google,
-    { redirectUri }
-  );
-  await googleProvider.signIn();
+  const googleProvider = litAuthClient.initProvider('google' as const, { redirectUri });
   const authMethod = await googleProvider.authenticate();
-  return authMethod;
+  return {
+    authMethodType: AuthMethodType.Google,
+    accessToken: authMethod.accessToken
+  };
 }
 
 /**
@@ -81,13 +79,12 @@ export async function authenticateWithDiscord(redirectUri: string): Promise<Auth
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
 
-  const discordProvider = litAuthClient.initProvider<DiscordProvider>(
-    ProviderType.Discord,
-    { redirectUri }
-  );
-  await discordProvider.signIn();
+  const discordProvider = litAuthClient.initProvider('discord' as const, { redirectUri });
   const authMethod = await discordProvider.authenticate();
-  return authMethod;
+  return {
+    authMethodType: AuthMethodType.Discord,
+    accessToken: authMethod.accessToken
+  };
 }
 
 /**
@@ -101,14 +98,15 @@ export async function authenticateWithEthWallet(
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
 
-  const ethWalletProvider = litAuthClient.initProvider<EthWalletProvider>(
-    ProviderType.EthWallet
-  );
+  const ethWalletProvider = litAuthClient.initProvider('ethwallet' as const);
   const authMethod = await ethWalletProvider.authenticate({
     address,
     signMessage,
   });
-  return authMethod;
+  return {
+    authMethodType: AuthMethodType.EthWallet,
+    accessToken: authMethod.accessToken
+  };
 }
 
 /**
@@ -119,12 +117,12 @@ export async function authenticateWithWebAuthn(): Promise<AuthMethod> {
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
 
-  const webAuthnProvider = litAuthClient.initProvider<WebAuthnProvider>(
-    ProviderType.WebAuthn
-  );
-  const options = await webAuthnProvider.register();
-  const authMethod = await webAuthnProvider.authenticate(options);
-  return authMethod;
+  const webAuthnProvider = litAuthClient.initProvider('webauthn' as const);
+  const credential = await webAuthnProvider.authenticate();
+  return {
+    authMethodType: AuthMethodType.WebAuthn,
+    accessToken: credential.accessToken
+  };
 }
 
 /**
@@ -139,18 +137,18 @@ export async function authenticateWithStytch(
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
   
-  const stytchProvider = litAuthClient.initProvider<StytchOTPProvider>(
-    ProviderType.StytchOtp,
-    {
-      appId: currentConfig.stytchProjectId || '',
-    }
-  );
+  const stytchProvider = litAuthClient.initProvider('stytchOtp' as const, {
+    appId: currentConfig.stytchProjectId || '',
+  });
   const authMethod = await stytchProvider.authenticate({
     accessToken,
     userId,
     method,
   });
-  return authMethod;
+  return {
+    authMethodType: AuthMethodType.StytchOtp,
+    accessToken: authMethod.accessToken
+  };
 }
 
 /**
@@ -158,12 +156,20 @@ export async function authenticateWithStytch(
  */
 export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
   try {
-    const mintRes = await litAuthClient.mintPKP(authMethod);
-    if (!mintRes?.pkp) {
+    const mintRes = await litAuthClient.mintPKPWithAuthMethods([authMethod], {
+      pkpPermissionScopes: [[1]], // Sign anything permission
+      addPkpEthAddressAsPermittedAddress: true,
+      sendPkpToitself: false
+    });
+    if (!mintRes?.pkpPublicKey) {
       throw new Error('Failed to mint PKP');
     }
 
-    return mintRes.pkp;
+    return {
+      publicKey: mintRes.pkpPublicKey,
+      ethAddress: mintRes.pkpEthAddress,
+      tokenId: mintRes.pkpTokenId
+    };
   } catch (err) {
     throw new Error('Error minting PKP');
   }
@@ -174,7 +180,11 @@ export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
  */
 export async function getPKPs(authMethod: AuthMethod): Promise<IRelayPKP[]> {
   try {
-    const pkps = await litAuthClient.fetchPKPsThroughRelayer(authMethod);
+    const provider = litAuthClient.getProvider(authMethod.authMethodType as AuthMethodType);
+    if (!provider) {
+      throw new Error('Provider not found');
+    }
+    const pkps = await provider.fetchPKPsThroughRelayer(authMethod);
     return pkps;
   } catch (err) {
     throw new Error('Error fetching PKPs');

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { Dispatch, SetStateAction, ReactElement } from 'react';
 import { AuthMethodsLib } from './AuthMethods';
 import { WebAuthnLib } from './WebAuthn';
 import { StytchOTPLib } from './StytchOTP';
 import { WalletMethodsLib } from './WalletMethods';
 
 export type LoginView = 'default' | 'email' | 'phone' | 'wallet' | 'webauthn';
+export type SetLoginView = Dispatch<SetStateAction<LoginView>>;
 
 export interface LoginMethodsLibProps {
   handleGoogleLogin: () => Promise<void>;
@@ -18,7 +19,7 @@ export interface LoginMethodsLibProps {
   error?: Error;
 }
 
-export const LoginMethodsLib: React.FC<LoginMethodsLibProps> = ({
+export const LoginMethodsLib = ({
   handleGoogleLogin,
   handleDiscordLogin,
   authWithStytch,
@@ -30,8 +31,9 @@ export const LoginMethodsLib: React.FC<LoginMethodsLibProps> = ({
   error,
 }) => {
   const [view, setView] = React.useState<LoginView>('default');
+  const handleSetView = (newView: LoginView) => setView(newView);
 
-  return (
+  return ((): JSX.Element => (
     <div className="container">
       <div className="wrapper">
         {error && (
@@ -43,14 +45,14 @@ export const LoginMethodsLib: React.FC<LoginMethodsLibProps> = ({
           <AuthMethodsLib
             handleGoogleLogin={handleGoogleLogin}
             handleDiscordLogin={handleDiscordLogin}
-            setView={setView}
+            setView={handleSetView}
           />
         )}
         {view === 'email' && (
           <StytchOTPLib
             method="email"
             authWithStytch={authWithStytch}
-            setView={setView}
+            setView={handleSetView}
             onSendCode={onSendCode}
             onVerifyCode={onVerifyCode}
           />
@@ -59,7 +61,7 @@ export const LoginMethodsLib: React.FC<LoginMethodsLibProps> = ({
           <StytchOTPLib
             method="phone"
             authWithStytch={authWithStytch}
-            setView={setView}
+            setView={handleSetView}
             onSendCode={onSendCode}
             onVerifyCode={onVerifyCode}
           />
@@ -80,5 +82,5 @@ export const LoginMethodsLib: React.FC<LoginMethodsLibProps> = ({
         )}
       </div>
     </div>
-  );
+  ))();
 };

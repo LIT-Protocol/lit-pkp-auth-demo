@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, ReactNode } from 'react';
+import type { LoginView } from './LoginMethods';
+import type { SignUpView } from './SignUpMethods';
 
 export type WebAuthnStep = 'register' | 'authenticate';
 
@@ -9,17 +11,17 @@ export interface WebAuthnLibProps {
   registerWithWebAuthn?: () => Promise<void>;
 }
 
-export const WebAuthnLib: React.FC<WebAuthnLibProps> = ({
+export const WebAuthnLib = ({
   start,
   authWithWebAuthn,
   setView,
   registerWithWebAuthn,
-}) => {
+}: WebAuthnLibProps) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error>();
   const [step, setStep] = useState<WebAuthnStep>(start);
 
-  async function handleRegister() {
+  const handleRegister = async () => {
     if (!registerWithWebAuthn) return;
     
     setError(undefined);
@@ -36,7 +38,7 @@ export const WebAuthnLib: React.FC<WebAuthnLibProps> = ({
 
   if (loading) {
     return (
-      <>
+      <div>
         {error && (
           <div className="alert alert--error">
             <p>{error.message}</p>
@@ -46,61 +48,81 @@ export const WebAuthnLib: React.FC<WebAuthnLibProps> = ({
           <div className="loader"></div>
           <p>Follow the prompts to continue...</p>
         </div>
-      </>
+      </div>
     );
   }
 
-  return (
-    <>
-      {error && (
-        <div className="alert alert--error">
-          <p>{error.message}</p>
-        </div>
-      )}
-      {step === 'register' && (
+  const renderContent = () => {
+    if (loading) {
+      return (
         <>
-          <h1>Register with a passkey</h1>
-          <p>Passkeys enable simple and secure passwordless authentication.</p>
-          <div className="buttons-container">
-            <button
-              type="button"
-              className={`btn btn--outline ${loading && 'btn--loading'}`}
-              onClick={handleRegister}
-              disabled={loading}
-            >
-              Create a credential
-            </button>
-            <button
-              onClick={() => setView('default')}
-              className="btn btn--link"
-            >
-              Back
-            </button>
+          {error && (
+            <div className="alert alert--error">
+              <p>{error.message}</p>
+            </div>
+          )}
+          <div className="loader-container">
+            <div className="loader"></div>
+            <p>Follow the prompts to continue...</p>
           </div>
         </>
-      )}
-      {step === 'authenticate' && (
-        <>
-          <h1>Authenticate with your passkey</h1>
-          <p>Sign in using your passkey.</p>
-          <div className="buttons-container">
-            <button
-              type="button"
-              className={`btn btn--outline ${loading && 'btn--loading'}`}
-              onClick={authWithWebAuthn}
-              disabled={loading}
-            >
-              Sign in with passkey
-            </button>
-            <button
-              onClick={() => setView('default')}
-              className="btn btn--link"
-            >
-              Back
-            </button>
+      );
+    }
+
+    return (
+      <div>
+        {error && (
+          <div className="alert alert--error">
+            <p>{error.message}</p>
           </div>
-        </>
-      )}
-    </>
-  );
+        )}
+        {step === 'register' && (
+          <div>
+            <h1>Register with a passkey</h1>
+            <p>Passkeys enable simple and secure passwordless authentication.</p>
+            <div className="buttons-container">
+              <button
+                type="button"
+                className={`btn btn--outline ${loading && 'btn--loading'}`}
+                onClick={handleRegister}
+                disabled={loading}
+              >
+                Create a credential
+              </button>
+              <button
+                onClick={() => setView('default')}
+                className="btn btn--link"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        )}
+        {step === 'authenticate' && (
+          <div>
+            <h1>Authenticate with your passkey</h1>
+            <p>Sign in using your passkey.</p>
+            <div className="buttons-container">
+              <button
+                type="button"
+                className={`btn btn--outline ${loading && 'btn--loading'}`}
+                onClick={authWithWebAuthn}
+                disabled={loading}
+              >
+                Sign in with passkey
+              </button>
+              <button
+                onClick={() => setView('default')}
+                className="btn btn--link"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return renderContent();
 };

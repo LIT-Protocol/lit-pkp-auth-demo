@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { Dispatch, SetStateAction, ReactElement } from 'react';
+import { LoginView } from './LoginMethods';
+import { SignUpView } from './SignUpMethods';
 
 export interface AuthMethodsLibProps {
   handleGoogleLogin: () => Promise<void>;
@@ -8,7 +10,7 @@ export interface AuthMethodsLibProps {
   discordIconUrl?: string;
 }
 
-export const AuthMethodsLib: React.FC<AuthMethodsLibProps> = ({
+export const AuthMethodsLib = ({
   handleGoogleLogin,
   handleDiscordLogin,
   setView,

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { AuthMethod, IRelayPKP, SessionSigs } from '@lit-protocol/types';
+import { AuthMethod, IRelayPKP, SessionSigs, GetSessionSigsProps } from '@lit-protocol/types';
 import { LitAbility, LitActionResource } from '@lit-protocol/auth-helpers';
 import { getSessionSigs } from '../utils/lit';
 
@@ -34,13 +34,10 @@ export default function useLitSession({ sessionDuration = 1000 * 60 * 60 * 24 * 
 
         // Generate session sigs
         const sessionSigs = await getSessionSigs({
-          pkpPublicKey: pkp.publicKey,
+          chain,
+          expiration,
+          resourceAbilityRequests: resourceAbilities,
           authMethod,
-          sessionSigsParams: {
-            chain,
-            expiration,
-            resourceAbilityRequests: resourceAbilities,
-          },
         });
 
         setSessionSigs(sessionSigs);

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, Dispatch, SetStateAction, ReactElement } from 'react';
+import { LoginView } from './LoginMethods';
+import { SignUpView } from './SignUpMethods';
 
 export type OtpMethod = 'email' | 'phone';
 export type OtpStep = 'submit' | 'verify';
@@ -11,7 +13,7 @@ export interface StytchOTPLibProps {
   onVerifyCode: (code: string, methodId: string) => Promise<{ sessionJwt: string; userId: string }>;
 }
 
-export const StytchOTPLib: React.FC<StytchOTPLibProps> = ({
+export const StytchOTPLib = ({
   method,
   authWithStytch,
   setView,
@@ -25,7 +27,7 @@ export const StytchOTPLib: React.FC<StytchOTPLibProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error>();
 
-  async function sendPasscode(event: React.FormEvent) {
+  const sendPasscode = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError(undefined);
@@ -40,7 +42,7 @@ export const StytchOTPLib: React.FC<StytchOTPLibProps> = ({
     }
   }
 
-  async function authenticate(event: React.FormEvent) {
+  const authenticate = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError(undefined);

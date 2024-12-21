@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { Dispatch, SetStateAction, ReactElement } from 'react';
 import { AuthMethodsLib } from './AuthMethods';
 import { WebAuthnLib } from './WebAuthn';
 import { StytchOTPLib } from './StytchOTP';
 import { WalletMethodsLib } from './WalletMethods';
 
 export type SignUpView = 'default' | 'email' | 'phone' | 'wallet' | 'webauthn';
+export type SetSignUpView = Dispatch<SetStateAction<SignUpView>>;
 
 export interface SignUpMethodsLibProps {
   handleGoogleLogin: () => Promise<void>;
@@ -19,7 +20,7 @@ export interface SignUpMethodsLibProps {
   error?: Error;
 }
 
-export const SignUpMethodsLib: React.FC<SignUpMethodsLibProps> = ({
+export const SignUpMethodsLib = ({
   handleGoogleLogin,
   handleDiscordLogin,
   authWithStytch,
@@ -32,8 +33,9 @@ export const SignUpMethodsLib: React.FC<SignUpMethodsLibProps> = ({
   error,
 }) => {
   const [view, setView] = React.useState<SignUpView>('default');
+  const handleSetView = (newView: SignUpView) => setView(newView);
 
-  return (
+  return ((): JSX.Element => (
     <div className="container">
       <div className="wrapper">
         {error && (
@@ -45,14 +47,14 @@ export const SignUpMethodsLib: React.FC<SignUpMethodsLibProps> = ({
           <AuthMethodsLib
             handleGoogleLogin={handleGoogleLogin}
             handleDiscordLogin={handleDiscordLogin}
-            setView={setView}
+            setView={handleSetView}
           />
         )}
         {view === 'email' && (
           <StytchOTPLib
             method="email"
             authWithStytch={authWithStytch}
-            setView={setView}
+            setView={handleSetView}
             onSendCode={onSendCode}
             onVerifyCode={onVerifyCode}
           />
@@ -61,7 +63,7 @@ export const SignUpMethodsLib: React.FC<SignUpMethodsLibProps> = ({
           <StytchOTPLib
             method="phone"
             authWithStytch={authWithStytch}
-            setView={setView}
+            setView={handleSetView}
             onSendCode={onSendCode}
             onVerifyCode={onVerifyCode}
           />
@@ -83,5 +85,5 @@ export const SignUpMethodsLib: React.FC<SignUpMethodsLibProps> = ({
         )}
       </div>
     </div>
-  );
+  ))();
 };

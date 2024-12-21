@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
+import type { LoginView } from './LoginMethods';
+import type { SignUpView } from './SignUpMethods';
 
 export interface WalletConnector {
   id: string;
@@ -13,13 +15,13 @@ export interface WalletMethodsLibProps {
   setView: (view: string) => void;
 }
 
-export const WalletMethodsLib: React.FC<WalletMethodsLibProps> = ({
+export const WalletMethodsLib = ({
   connectors,
   authWithEthWallet,
   setView,
-}) => {
+}: WalletMethodsLibProps): JSX.Element => {
   return (
-    <>
+    <div>
       <h1>Connect your web3 wallet</h1>
       <p>
         Connect your wallet then sign a message to verify you&apos;re the owner
@@ -50,6 +52,6 @@ export const WalletMethodsLib: React.FC<WalletMethodsLibProps> = ({
           Back
         </button>
       </div>
-    </>
+    </div>
   );
 };
