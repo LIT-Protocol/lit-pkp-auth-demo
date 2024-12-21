@@ -1,0 +1,70 @@
+{
+    "$id": "https://github.com/LIT-Protocol/accs-schemas/blob/main/src/generated/LPACC_SOL.json",
+    "title": "LPACC_SOL",
+    "description": "",
+    "type": "object",
+    "properties": {
+        "conditionType": {
+            "type": "string"
+        },
+        "method": {
+            "type": "string"
+        },
+        "params": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "pdaParams": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "pdaInterface": {
+            "type": "object",
+            "properties": {
+                "offset": {
+                    "type": "number"
+                },
+                "fields": {
+                    "type": "object"
+                }
+            },
+            "required": ["offset", "fields"],
+            "additionalProperties": false
+        },
+        "pdaKey": {
+            "type": "string"
+        },
+        "chain": {
+            "enum": ["solana", "solanaDevnet", "solanaTestnet"]
+        },
+        "returnValueTest": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "comparator": {
+                    "enum": ["contains", "=", ">", ">=", "<", "<="]
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "required": ["comparator", "value", "key"],
+            "additionalProperties": false
+        }
+    },
+    "required": [
+        "method",
+        "params",
+        "chain",
+        "pdaInterface",
+        "pdaKey",
+        "returnValueTest"
+    ],
+    "additionalProperties": false
+}

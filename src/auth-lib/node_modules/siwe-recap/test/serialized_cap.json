@@ -1,0 +1,17 @@
+{
+  "att": {
+    "http://example.com/public/photos/": { "crud/delete": [{}] },
+    "mailto:username@example.com": {
+      "msg/receive": [
+        {
+          "max_count": 5,
+          "templates": ["newsletter", "marketing"]
+        }
+      ],
+      "msg/send": [{ "to": "someone@email.com" }, { "to": "joe@email.com" }]
+    }
+  },
+  "prf": [
+    "bafysameboaza4mnsng7t3djdbilbrnliv6ikxh45zsph7kpettjfbp4ad2g2uu2znujlf2afphw25d4y35pq"
+  ]
+}
