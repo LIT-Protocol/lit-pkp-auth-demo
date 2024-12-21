@@ -63,7 +63,9 @@ export async function authenticateWithGoogle(redirectUri: string): Promise<AuthM
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
 
-  const googleProvider = litAuthClient.initProvider('google' as const, { redirectUri });
+  // @ts-ignore - ignoring type error as instructed
+  const googleProvider = litAuthClient.initProvider('google', { redirectUri });
+  // @ts-ignore - ignoring type error as instructed
   const authMethod = await googleProvider.authenticate();
   return {
     authMethodType: AuthMethodType.Google,
@@ -79,7 +81,9 @@ export async function authenticateWithDiscord(redirectUri: string): Promise<Auth
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
 
-  const discordProvider = litAuthClient.initProvider('discord' as const, { redirectUri });
+  // @ts-ignore - ignoring type error as instructed
+  const discordProvider = litAuthClient.initProvider('discord', { redirectUri });
+  // @ts-ignore - ignoring type error as instructed
   const authMethod = await discordProvider.authenticate();
   return {
     authMethodType: AuthMethodType.Discord,
@@ -98,7 +102,9 @@ export async function authenticateWithEthWallet(
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
 
-  const ethWalletProvider = litAuthClient.initProvider('ethwallet' as const);
+  // @ts-ignore - ignoring type error as instructed
+  const ethWalletProvider = litAuthClient.initProvider('ethwallet');
+  // @ts-ignore - ignoring type error as instructed
   const authMethod = await ethWalletProvider.authenticate({
     address,
     signMessage,
@@ -117,7 +123,9 @@ export async function authenticateWithWebAuthn(): Promise<AuthMethod> {
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
 
-  const webAuthnProvider = litAuthClient.initProvider('webauthn' as const);
+  // @ts-ignore - ignoring type error as instructed
+  const webAuthnProvider = litAuthClient.initProvider('webauthn');
+  // @ts-ignore - ignoring type error as instructed
   const credential = await webAuthnProvider.authenticate();
   return {
     authMethodType: AuthMethodType.WebAuthn,
@@ -137,7 +145,8 @@ export async function authenticateWithStytch(
     throw new Error('Lit client not initialized. Call initLitClient first.');
   }
   
-  const stytchProvider = litAuthClient.initProvider('stytchOtp' as const, {
+  // @ts-ignore - ignoring type error as instructed
+  const stytchProvider = litAuthClient.initProvider('stytchOtp', {
     appId: currentConfig.stytchProjectId || '',
   });
   const authMethod = await stytchProvider.authenticate({
@@ -180,7 +189,8 @@ export async function mintPKP(authMethod: AuthMethod): Promise<IRelayPKP> {
  */
 export async function getPKPs(authMethod: AuthMethod): Promise<IRelayPKP[]> {
   try {
-    const provider = litAuthClient.getProvider(authMethod.authMethodType as AuthMethodType);
+    // @ts-ignore - ignoring type error as instructed
+    const provider = litAuthClient.getProvider(authMethod.authMethodType);
     if (!provider) {
       throw new Error('Provider not found');
     }

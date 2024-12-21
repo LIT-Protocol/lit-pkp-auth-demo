@@ -23,7 +23,7 @@ export interface UseLitAuthProps {
   }>;
 }
 
-export default function useLitAuth({ redirectUri, onConnect }: UseLitAuthProps = {}) {
+export function useLitAuth({ redirectUri, onConnect }: UseLitAuthProps = {}) {
   const [authMethod, setAuthMethod] = useState<AuthMethod>();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error>();

@@ -1,23 +1,12 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardLib = void 0;
-const react_1 = __importDefault(require("react"));
+const jsx_runtime_1 = require("react/jsx-runtime");
 const DashboardLib = ({ account, onDisconnect, onSwitchAccount, }) => {
     if (!account) {
         return null;
     }
-    return (react_1.default.createElement("div", { className: "container" },
-        react_1.default.createElement("div", { className: "wrapper" },
-            react_1.default.createElement("h1", null, "Dashboard"),
-            react_1.default.createElement("div", { className: "account-info" },
-                react_1.default.createElement("h2", null, "Current Account"),
-                react_1.default.createElement("p", { className: "account-address" }, account.ethAddress.toLowerCase()),
-                react_1.default.createElement("div", { className: "buttons-container" },
-                    react_1.default.createElement("button", { type: "button", className: "btn btn--outline", onClick: onSwitchAccount }, "Switch Account"),
-                    react_1.default.createElement("button", { type: "button", className: "btn btn--outline btn--danger", onClick: onDisconnect }, "Disconnect"))))));
+    return ((0, jsx_runtime_1.jsx)("div", { className: "container", children: (0, jsx_runtime_1.jsxs)("div", { className: "wrapper", children: [(0, jsx_runtime_1.jsx)("h1", { children: "Dashboard" }), (0, jsx_runtime_1.jsxs)("div", { className: "account-info", children: [(0, jsx_runtime_1.jsx)("h2", { children: "Current Account" }), (0, jsx_runtime_1.jsx)("p", { className: "account-address", children: account.ethAddress.toLowerCase() }), (0, jsx_runtime_1.jsxs)("div", { className: "buttons-container", children: [(0, jsx_runtime_1.jsx)("button", { type: "button", className: "btn btn--outline", onClick: onSwitchAccount, children: "Switch Account" }), (0, jsx_runtime_1.jsx)("button", { type: "button", className: "btn btn--outline btn--danger", onClick: onDisconnect, children: "Disconnect" })] })] })] }) }));
 };
 exports.DashboardLib = DashboardLib;
 //# sourceMappingURL=Dashboard.js.map

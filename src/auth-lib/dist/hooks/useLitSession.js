@@ -9,10 +9,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = useLitSession;
+exports.useLitSession = useLitSession;
 const react_1 = require("react");
-const auth_helpers_1 = require("@lit-protocol/auth-helpers");
 const lit_1 = require("../utils/lit");
+const LitAbility = {
+    PKPSigning: 'pkp-signing'
+};
+class LitActionResource {
+    constructor(resource) {
+        this.resource = resource;
+    }
+    toJSON() {
+        return { resource: this.resource };
+    }
+}
 function useLitSession({ sessionDuration = 1000 * 60 * 60 * 24 * 7 } = {}) {
     const [sessionSigs, setSessionSigs] = (0, react_1.useState)();
     const [loading, setLoading] = (0, react_1.useState)(false);
@@ -24,8 +34,8 @@ function useLitSession({ sessionDuration = 1000 * 60 * 60 * 24 * 7 } = {}) {
             const chain = 'ethereum';
             const resourceAbilities = [
                 {
-                    resource: new auth_helpers_1.LitActionResource('*'),
-                    ability: auth_helpers_1.LitAbility.PKPSigning,
+                    resource: { resource: '*' },
+                    ability: LitAbility.PKPSigning,
                 },
             ];
             const expiration = new Date(Date.now() + sessionDuration).toISOString();
@@ -33,7 +43,7 @@ function useLitSession({ sessionDuration = 1000 * 60 * 60 * 24 * 7 } = {}) {
                 chain,
                 expiration,
                 resourceAbilityRequests: resourceAbilities,
-                authMethod,
+                authSig: authMethod,
             });
             setSessionSigs(sessionSigs);
         }

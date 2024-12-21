@@ -1,6 +1,6 @@
-export { default as useLitAuth } from './hooks/useLitAuth';
-export { default as useLitSession } from './hooks/useLitSession';
-export { default as useLitAccounts } from './hooks/useLitAccounts';
+export { LitAuthProvider, useLitAuth } from './components/LitAuthProvider';
+export { useLitSession } from './hooks/useLitSession';
+export { useLitAccounts } from './hooks/useLitAccounts';
 export { AuthMethodsLib } from './components/AuthMethods';
 export { WebAuthnLib } from './components/WebAuthn';
 export { StytchOTPLib } from './components/StytchOTP';
@@ -21,3 +21,7 @@ export { AccountSelectionLib } from './components/AccountSelection';
 export { LoginMethodsLib } from './components/LoginMethods';
 export { SignUpMethodsLib } from './components/SignUpMethods';
 export { DashboardLib } from './components/Dashboard';
+export { LoadingLib } from './components/Loading';
+export { CreateAccountLib } from './components/CreateAccount';
+export type { LoadingLibProps } from './components/Loading';
+export type { CreateAccountLibProps } from './components/CreateAccount';

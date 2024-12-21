@@ -1,10 +1,10 @@
 import { AuthMethod, IRelayPKP } from '@lit-protocol/types';
-export default function useLitAccounts(): {
+export declare function useLitAccounts(): {
     fetchAccounts: (authMethod: AuthMethod) => Promise<void>;
     createAccount: (authMethod: AuthMethod) => Promise<void>;
-    setCurrentAccount: import("react").Dispatch<import("react").SetStateAction<IRelayPKP | undefined>>;
+    setCurrentAccount: import("react").Dispatch<import("react").SetStateAction<IRelayPKP>>;
     accounts: IRelayPKP[];
-    currentAccount: IRelayPKP | undefined;
+    currentAccount: IRelayPKP;
     loading: boolean;
-    error: Error | undefined;
+    error: Error;
 };

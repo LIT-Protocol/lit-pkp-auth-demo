@@ -10,9 +10,11 @@ import {
   signInWithGoogle,
 } from '../utils/lit';
 import { AuthMethodType } from '@lit-protocol/constants';
-import SignUpMethods from '../components/SignUpMethods';
-import Dashboard from '../components/Dashboard';
-import Loading from '../components/Loading';
+import { 
+  SignUpMethodsLib as SignUpMethods, 
+  DashboardLib as Dashboard,
+  LoadingLib as Loading 
+} from '@lit-protocol/auth-lib';
 
 export default function SignUpView() {
   const redirectUri = ORIGIN;

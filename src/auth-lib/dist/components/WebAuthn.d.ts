@@ -1,4 +1,3 @@
-import React from 'react';
 export type WebAuthnStep = 'register' | 'authenticate';
 export interface WebAuthnLibProps {
     start: WebAuthnStep;
@@ -11,4 +10,4 @@ export declare const WebAuthnLib: ({ start, authWithWebAuthn, setView, registerW
     authWithWebAuthn: any;
     setView: any;
     registerWithWebAuthn: any;
-}) => React.JSX.Element;
+}) => import("react/jsx-runtime").JSX.Element;

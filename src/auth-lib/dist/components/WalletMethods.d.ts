@@ -1,4 +1,3 @@
-import React from 'react';
 export interface WalletConnector {
     id: string;
     name: string;
@@ -14,4 +13,4 @@ export declare const WalletMethodsLib: ({ connectors, authWithEthWallet, setView
     connectors: any;
     authWithEthWallet: any;
     setView: any;
-}) => React.JSX.Element;
+}) => import("react/jsx-runtime").JSX.Element;

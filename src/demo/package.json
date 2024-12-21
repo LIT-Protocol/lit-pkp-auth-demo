@@ -12,11 +12,14 @@
     "@simplewebauthn/browser": "^7.2.0",
     "@simplewebauthn/typescript-types": "^7.0.0",
     "next": "^13.4.19",
+    "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.0",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
+    "@babel/preset-env": "^7.26.0",
     "@types/node": "^20.4.5",
     "@types/react": "^18.2.18",
     "@types/react-dom": "^18.2.7",
@@ -24,14 +27,17 @@
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.0",
+    "events": "^3.3.0",
     "https-browserify": "^1.0.0",
     "path-browserify": "^1.0.1",
+    "pino-pretty": "^13.0.0",
     "postcss": "^8.4.27",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "tailwindcss": "^3.3.3",
     "ts-loader": "^9.5.1",
     "typescript": "^5.1.6",
-    "url": "^0.11.3"
+    "url": "^0.11.3",
+    "util": "^0.12.5"
   }
 }

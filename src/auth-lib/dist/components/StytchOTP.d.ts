@@ -1,4 +1,3 @@
-import React from 'react';
 export type OtpMethod = 'email' | 'phone';
 export type OtpStep = 'submit' | 'verify';
 export interface StytchOTPLibProps {
@@ -19,4 +18,4 @@ export declare const StytchOTPLib: ({ method, authWithStytch, setView, onSendCod
     setView: any;
     onSendCode: any;
     onVerifyCode: any;
-}) => React.JSX.Element;
+}) => import("react/jsx-runtime").JSX.Element;

@@ -5,7 +5,7 @@ import type { SignUpView } from './SignUpMethods';
 export interface AuthMethodsLibProps {
   handleGoogleLogin: () => Promise<void>;
   handleDiscordLogin: () => Promise<void>;
-  setView: (view: string) => void;
+  setView: (view: LoginView | SignUpView) => void;
   googleIconUrl?: string;
   discordIconUrl?: string;
 }

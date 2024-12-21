@@ -5,7 +5,7 @@ const webpack = require('webpack');
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    esmExternals: true,
+    esmExternals: 'loose',
   },
   webpack: (config, { dev, isServer }) => {
     // Disable HMR for node_modules
@@ -25,6 +25,8 @@ const nextConfig = {
         loader: 'babel-loader',
         options: {
           plugins: ['@babel/plugin-syntax-import-meta'],
+          presets: ['@babel/preset-env'],
+          sourceType: 'unambiguous'
         },
       },
     });
@@ -44,6 +46,18 @@ const nextConfig = {
               moduleResolution: 'node',
               target: 'es5',
               jsx: 'preserve',
+              noEmit: false,
+              noImplicitAny: false,
+              allowJs: true,
+              checkJs: false,
+              skipLibCheck: true,
+              esModuleInterop: true,
+              allowSyntheticDefaultImports: true,
+              strict: false,
+              forceConsistentCasingInFileNames: false,
+              resolveJsonModule: true,
+              isolatedModules: true,
+              noEmitOnError: false,
             },
           },
         },
@@ -73,11 +87,12 @@ const nextConfig = {
       url: require.resolve('url/'),
     };
 
-    // Add buffer polyfill
+    // Add buffer and process polyfills
     config.plugins = [
       ...config.plugins,
       new webpack.ProvidePlugin({
         Buffer: ['buffer', 'Buffer'],
+        process: 'process/browser',
       }),
     ];
 

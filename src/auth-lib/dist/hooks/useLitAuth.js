@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = useLitAuth;
+exports.useLitAuth = useLitAuth;
 const react_1 = require("react");
 const lit_auth_client_1 = require("@lit-protocol/lit-auth-client");
 const lit_1 = require("../utils/lit");

@@ -78,6 +78,7 @@ export const LoginMethodsLib = ({
             start="authenticate"
             authWithWebAuthn={authWithWebAuthn}
             setView={setView}
+            registerWithWebAuthn={() => {}}  // Provide empty function since it's not used in login
           />
         )}
       </div>

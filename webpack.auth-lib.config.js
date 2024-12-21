@@ -1,75 +1,51 @@
 const path = require('path');
-const TerserPlugin = require('terser-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = {
-  mode: 'production',
-  context: path.resolve(__dirname, 'src/auth-lib'),
-  entry: './index.ts',
+  mode: 'development',
+  entry: path.resolve(__dirname, 'src/auth-lib/index.ts'),
+  target: 'web',
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'litAuthLib.js',
+    path: path.resolve(__dirname, 'src/auth-lib/dist'),
+    filename: 'index.js',
     library: {
-      name: 'litAuthLib',
       type: 'umd',
-      umdNamedDefine: true,
+      name: 'litAuthLib'
     },
-    globalObject: 'this',
+    globalObject: 'this'
   },
   externals: {
-    react: {
-      commonjs: 'react',
-      commonjs2: 'react',
-      amd: 'react',
-      root: 'React',
-    },
-    'react-dom': {
-      commonjs: 'react-dom',
-      commonjs2: 'react-dom',
-      amd: 'react-dom',
-      root: 'ReactDOM',
-    },
+    react: 'react',
+    'react-dom': 'react-dom'
+  },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/
+      }
+    ]
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
-      "crypto": require.resolve("crypto-browserify"),
-      "stream": require.resolve("stream-browserify"),
-      "http": require.resolve("stream-http"),
-      "https": require.resolve("https-browserify"),
-      "url": require.resolve("url"),
-      "buffer": require.resolve("buffer"),
-      "zlib": require.resolve("browserify-zlib"),
-      "path": require.resolve("path-browserify")
+      crypto: require.resolve('crypto-browserify'),
+      stream: require.resolve('stream-browserify'),
+      buffer: require.resolve('buffer'),
+      util: require.resolve('util'),
+      assert: require.resolve('assert'),
+      http: require.resolve('stream-http'),
+      https: require.resolve('https-browserify'),
+      os: require.resolve('os-browserify'),
+      url: require.resolve('url'),
+      path: require.resolve('path-browserify')
     }
   },
   plugins: [
     new webpack.ProvidePlugin({
-      Buffer: ['buffer', 'Buffer'],
-      process: 'process/browser'
+      process: 'process/browser',
+      Buffer: ['buffer', 'Buffer']
     })
-  ],
-  module: {
-    rules: [
-      {
-        test: /\.(ts|tsx)$/,
-        exclude: /node_modules/,
-        use: [
-          {
-            loader: 'ts-loader',
-            options: {
-              transpileOnly: true, // Skip type checking
-              compilerOptions: {
-                module: 'esnext',
-              }
-            }
-          }
-        ],
-      },
-    ],
-  },
-  optimization: {
-    minimize: true,
-    minimizer: [new TerserPlugin()],
-  },
+  ]
 };

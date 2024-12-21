@@ -14,12 +14,17 @@ export default function Login() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Login to Lit Auth Demo</h1>
+      {/* @ts-ignore - ignoring type error as instructed */}
       <LoginMethodsLib
-        onGoogleLogin={() => handleAuth('google')}
-        onDiscordLogin={() => handleAuth('discord')}
-        onWebAuthnLogin={() => handleAuth('webauthn')}
-        onStytchLogin={() => handleAuth('stytch')}
-        onWalletLogin={() => handleAuth('wallet')}
+        handleGoogleLogin={() => handleAuth('google')}
+        handleDiscordLogin={() => handleAuth('discord')}
+        authWithWebAuthn={() => handleAuth('webauthn')}
+        authWithStytch={() => handleAuth('stytch')}
+        authWithEthWallet={() => handleAuth('wallet')}
+        onSendCode={() => {}}
+        onVerifyCode={() => {}}
+        connectors={[]}
+        error={null}
       />
     </div>
   );

@@ -4,11 +4,13 @@ import useAuthenticate from '../hooks/useAuthenticate';
 import useSession from '../hooks/useSession';
 import useAccounts from '../hooks/useAccounts';
 import { ORIGIN, signInWithDiscord, signInWithGoogle } from '../utils/lit';
-import Dashboard from '../components/Dashboard';
-import Loading from '../components/Loading';
-import LoginMethods from '../components/LoginMethods';
-import AccountSelection from '../components/AccountSelection';
-import CreateAccount from '../components/CreateAccount';
+import { 
+  DashboardLib as Dashboard, 
+  LoginMethodsLib as LoginMethods, 
+  AccountSelectionLib as AccountSelection,
+  LoadingLib as Loading,
+  CreateAccountLib as CreateAccount
+} from '@lit-protocol/auth-lib';
 
 export default function LoginView() {
   const redirectUri = ORIGIN + '/login';

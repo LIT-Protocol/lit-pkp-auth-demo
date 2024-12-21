@@ -31,3 +31,4 @@ yarn-error.log*
 # vercel
 .vercel
 node_modules/
+src/demo/.next/cache

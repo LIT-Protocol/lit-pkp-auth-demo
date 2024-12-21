@@ -11,13 +11,13 @@ export interface UseLitAuthProps {
         connector: WalletConnector;
     }>;
 }
-export default function useLitAuth({ redirectUri, onConnect }?: UseLitAuthProps): {
+export declare function useLitAuth({ redirectUri, onConnect }?: UseLitAuthProps): {
     authWithGoogle: () => Promise<void>;
     authWithDiscord: () => Promise<void>;
     authWithEthWallet: (connector: any) => Promise<void>;
     authWithWebAuthn: () => Promise<void>;
     authWithStytch: (accessToken: string, userId?: string, method?: string) => Promise<void>;
-    authMethod: AuthMethod | undefined;
+    authMethod: AuthMethod;
     loading: boolean;
-    error: Error | undefined;
+    error: Error;
 };
