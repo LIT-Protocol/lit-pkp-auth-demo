@@ -1,0 +1,26 @@
+{
+  "name": "@lit-protocol/auth-lib",
+  "version": "0.1.0",
+  "description": "Authentication library for Lit Protocol",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@lit-protocol/lit-auth-client": "^3.0.0",
+    "@lit-protocol/lit-node-client": "^3.0.0",
+    "@lit-protocol/types": "^3.0.0",
+    "@lit-protocol/auth-helpers": "^3.0.0",
+    "@lit-protocol/constants": "^3.0.0",
+    "react": "^18.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}
