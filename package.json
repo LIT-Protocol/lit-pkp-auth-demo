@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build:lib": "webpack --config webpack.auth-lib.config.js"
+    "build:lib": "webpack --config webpack.auth-lib.config.js",
+    "postinstall": "yarn build:lib"
   },
   "dependencies": {
     "@lit-protocol/auth-helpers": "6.3.0",
@@ -33,15 +34,25 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
+    "@babel/preset-env": "^7.26.0",
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
     "@types/node": "18.15.11",
     "@types/react": "18.0.31",
     "babel-loader": "^9.2.1",
+    "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
+    "https-browserify": "^1.0.0",
+    "path-browserify": "^1.0.1",
+    "process": "^0.11.10",
     "sass": "^1.64.2",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
     "terser-webpack-plugin": "^5.3.11",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
+    "url": "^0.11.4",
     "webpack": "^5.97.1",
     "webpack-cli": "^6.0.1"
   }
