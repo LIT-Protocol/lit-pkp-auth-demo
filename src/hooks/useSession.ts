@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
 import { AuthMethod } from '@lit-protocol/types';
 import { getSessionSigs } from '../utils/lit';
-import { LitAbility, LitActionResource } from '@lit-protocol/auth-helpers';
+import { LitActionResource } from '@lit-protocol/auth-helpers';
 import { IRelayPKP } from '@lit-protocol/types';
 import { SessionSigs } from '@lit-protocol/types';
+import { LIT_ABILITY } from '@lit-protocol/constants';
 
 export default function useSession() {
   const [sessionSigs, setSessionSigs] = useState<SessionSigs>();
@@ -23,7 +24,7 @@ export default function useSession() {
         const resourceAbilities = [
           {
             resource: new LitActionResource('*'),
-            ability: LitAbility.PKPSigning,
+            ability: LIT_ABILITY.PKPSigning,
           },
         ];
         const expiration = new Date(
