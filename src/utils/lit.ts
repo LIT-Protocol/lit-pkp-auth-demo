@@ -3,14 +3,15 @@ import {
   GoogleProvider,
   EthWalletProvider,
   WebAuthnProvider,
-  LitAuthClient,
   BaseProvider,
+  LitRelay,
 } from '@lit-protocol/lit-auth-client';
 import { LitNodeClient } from '@lit-protocol/lit-node-client';
 import {
   AuthMethodScope,
   AuthMethodType,
   LIT_NETWORK,
+  LitNetwork,
   ProviderType,
 } from '@lit-protocol/constants';
 import {
@@ -42,13 +43,6 @@ export const litNodeClient: LitNodeClient = new LitNodeClient({
 
 litNodeClient.connect();
 
-export const litAuthClient: LitAuthClient = new LitAuthClient({
-  litRelayConfig: {
-    relayApiKey: 'test-api-key',
-  },
-  litNodeClient,
-});
-
 /**
  * Validate provider
  */
@@ -60,11 +54,19 @@ export function isSocialLoginSupported(provider: string): boolean {
  * Redirect to Lit login
  */
 export async function signInWithGoogle(redirectUri: string): Promise<void> {
-  const googleProvider = litAuthClient.initProvider<GoogleProvider>(
-    ProviderType.Google,
-    { redirectUri }
-  );
-  await googleProvider.signIn();
+
+  const relay = new LitRelay({
+    relayUrl: LitRelay.getRelayUrl(SELECTED_LIT_NETWORK),
+    relayApiKey: process.env.NEXT_PUBLIC_RELAY_API_KEY
+  });
+
+  const litGoogleAuthClient = new GoogleProvider({
+    litNodeClient,
+    relay,
+    redirectUri
+  })
+
+  await litGoogleAuthClient.signIn();
 }
 
 /**
