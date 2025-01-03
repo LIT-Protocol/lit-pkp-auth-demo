@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { JSX } from 'react';
 import { useIsMounted } from '../hooks/useIsMounted';
 import { AuthView } from './Modal';
 
@@ -7,7 +7,7 @@ interface WalletMethodsProps {
   setView: React.Dispatch<React.SetStateAction<AuthView>>;
 }
 
-const WalletMethods = ({ authWithEthWallet, setView }: WalletMethodsProps) => {
+const WalletMethods = ({ authWithEthWallet, setView }: WalletMethodsProps): JSX.Element => {
   const isMounted = useIsMounted();
 
   if (!isMounted) return null;

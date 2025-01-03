@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, JSX } from 'react';
 import { AuthView } from './Modal';
 
 interface StytchOTPProps {
@@ -10,7 +10,7 @@ interface StytchOTPProps {
 type OtpMethod = 'email' | 'phone';
 type OtpStep = 'submit' | 'verify';
 
-const StytchOTP = ({ method, authWithStytch, setView }: StytchOTPProps) => {
+const StytchOTP = ({ method, authWithStytch, setView }: StytchOTPProps): JSX.Element => {
   const [step, setStep] = useState<OtpStep>('submit');
   const [userId, setUserId] = useState<string>('');
   const [methodId, setMethodId] = useState<string>('');

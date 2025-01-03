@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, JSX } from 'react';
 import { IRelayPKP, SessionSigs } from '@lit-protocol/types';
 import { ethers } from 'ethers';
 import { PKPEthersWallet } from '@lit-protocol/pkp-ethers';

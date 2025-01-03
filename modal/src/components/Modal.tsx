@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, JSX } from 'react';
 import { LIT_NETWORKS_KEYS } from '@lit-protocol/types';
 import AuthMethods from './AuthMethods';
 import LoginMethods from './LoginMethods';

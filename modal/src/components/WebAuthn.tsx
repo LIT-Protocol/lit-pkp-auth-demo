@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, JSX } from 'react';
 import { AuthView } from './Modal';
 
 export type WebAuthnStep = 'register' | 'authenticate';
