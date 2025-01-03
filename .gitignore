@@ -1,6 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+/modal/node_modules
+/modal/dist
 /node_modules
 /.pnp
 .pnp.js
