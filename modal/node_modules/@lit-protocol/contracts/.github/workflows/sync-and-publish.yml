@@ -1,0 +1,144 @@
+name: Sync and Publish
+
+on:
+  repository_dispatch:
+    types:
+      - sync_trigger
+  push:
+    branches:
+      - main
+      - "**" # Match any branch
+
+jobs:
+  sync-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Set environment variables
+        run: |
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "DEV_BRANCH=develop" >> $GITHUB_ENV
+            echo "PUBLISH_ALLOWED=true" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == refs/heads/dev-* ]]; then
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            BRANCH_NAME=${BRANCH_NAME#dev-}
+            DEV_BRANCH_NAME=${BRANCH_NAME#dev-}
+            echo "DEV_BRANCH=$DEV_BRANCH_NAME" >> $GITHUB_ENV
+            echo "PUBLISH_ALLOWED=true" >> $GITHUB_ENV
+            # Create TAG_NAME by replacing slashes with dashes
+            TAG_NAME=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
+            echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          else
+            echo "DEV_BRANCH=no_publish" >> $GITHUB_ENV
+            echo "PUBLISH_ALLOWED=false" >> $GITHUB_ENV
+          fi
+        shell: bash
+
+      # Example output
+      # BRANCH_NAME is dev-feature/get-node-info-in-one-contract-call
+      # DEV_BRANCH is feature/get-node-info-in-one-contract-call
+      # PUBLISH_ALLOWED is true
+      # TAG_NAME is feature-get-node-info-in-one-contract-call
+      - name: Display environment variables
+        run: |
+          echo "BRANCH_NAME is $BRANCH_NAME"
+          echo "DEV_BRANCH is $DEV_BRANCH"
+          echo "PUBLISH_ALLOWED is $PUBLISH_ALLOWED"
+          echo "TAG_NAME is $TAG_NAME"
+
+
+      # DEBUG ONLY
+      # - name: Stop CI
+      #   run: |
+      #     echo "Stopping CI after displaying environment variables"
+      #     exit 1
+
+      # Display message for non-dev and non-main branches
+      - name: Display message for other branches
+        if: env.PUBLISH_ALLOWED == 'false'
+        run: |
+          echo "::warning::This branch (${{ env.BRANCH_NAME }}) does not have the 'dev-' prefix and is not the main branch. It will not be published."
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+
+      - name: Install bun
+        run: curl -fsSL https://bun.sh/install | bash
+
+      - name: Add bun to path
+        run: echo 'export BUN_INSTALL="$HOME/.bun"' >> $GITHUB_ENV
+        shell: bash
+
+      - name: Install dependencies
+        run: $HOME/.bun/bin/bun install
+
+      # prod (stable) - gets data from /networks
+      - name: Run (prod) fetch-contracts.ts
+        env:
+          LIT_ABI_SOURCE: prod
+          GH_LIT_ASSETS_READ_ONLY_API: ${{ secrets.GH_LIT_ASSETS_READ_ONLY_API }}
+        run: $HOME/.bun/bin/bun run fetch-contracts.ts
+
+      # dev (always updating) - gets data from /lit-assets
+      - name: Run (dev) fetch-contracts.ts
+        env:
+          LIT_ABI_SOURCE: dev
+          GH_LIT_ASSETS_READ_ONLY_API: ${{ secrets.GH_LIT_ASSETS_READ_ONLY_API }}
+        run: $HOME/.bun/bin/bun run fetch-contracts.ts
+
+      - name: Run general-exports.ts
+        run: $HOME/.bun/bin/bun run generate-exports.mjs
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: Update contracts data" || echo "No changes to commit"
+          git push origin ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Bump version
+        if: env.PUBLISH_ALLOWED == 'true'
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            npm version patch
+            NEW_VERSION=$(node -p "require('./package.json').version")
+          else
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            BASE_VERSION=$(echo $CURRENT_VERSION | sed -E 's/-[0-9a-f]+$//')
+            SHORT_HASH=$(git rev-parse --short HEAD)
+            NEW_VERSION="${BASE_VERSION}-${SHORT_HASH}"
+            npm version ${NEW_VERSION} --no-git-tag-version
+          fi
+          echo "NEW_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
+
+      - name: Commit and push version bump
+        if: env.PUBLISH_ALLOWED == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: bump version to ${NEW_VERSION}" || echo "No version bump to commit"
+          git push origin ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Publish npm package
+        if: env.PUBLISH_ALLOWED == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          if [[ "$BRANCH_NAME" == "main" ]]; then
+            npm publish --access public --tag latest
+          else
+            npm publish --access public --tag $TAG_NAME
+          fi

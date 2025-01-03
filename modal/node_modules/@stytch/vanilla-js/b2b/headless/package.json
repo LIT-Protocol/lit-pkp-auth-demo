@@ -1,0 +1,6 @@
+{
+  "internal": true,
+  "main": "../../dist/b2b/index.headless.js",
+  "module": "../../dist/b2b/index.headless.esm.js",
+  "types": "../../dist/b2b/index.headless.d.ts"
+}

@@ -1,0 +1,43 @@
+{
+  "withoutCaps": {
+    "message": {
+      "domain": "example.com",
+      "address": "0x0000000000000000000000000000000000000000",
+      "uri": "did:key:example",
+      "version": "1",
+      "chainId": 1,
+      "nonce": "mynonce1",
+      "issuedAt": "2022-06-21T12:00:00.000Z"
+    }
+  },
+  "withStatementNoCaps": {
+    "message": {
+      "domain": "example.com",
+      "address": "0x0000000000000000000000000000000000000000",
+      "statement": "Some custom statement.",
+      "uri": "did:key:example",
+      "version": "1",
+      "chainId": 1,
+      "nonce": "mynonce1",
+      "issuedAt": "2022-06-21T12:00:00.000Z"
+    }
+  },
+  "interleavedResources": {
+    "message": {
+      "domain": "example.com",
+      "address": "0x0000000000000000000000000000000000000000",
+      "statement": "I further authorize the stated URI to perform the following actions on my behalf: (1) \"credential\": \"present\" for \"credential:*\". (2) \"kv\": \"get\", \"list\", \"metadata\" for \"kepler:ens:example.eth://default/\".",
+      "uri": "did:key:example",
+      "version": "1",
+      "chainId": 1,
+      "nonce": "mynonce1",
+      "issuedAt": "2022-06-21T12:00:00.000Z",
+      "resourtes": [
+        "http://example.com",
+        "urn:recap:eyJhdHQiOnsiY3JlZGVudGlhbDoqIjp7ImNyZWRlbnRpYWwvcHJlc2VudCI6W119LCJrZXBsZXI6ZW5zOmV4YW1wbGUuZXRoOi8vZGVmYXVsdC8iOnsia3YvZ2V0IjpbXSwia3YvbGlzdCI6W10sImt2L21ldGFkYXRhIjpbXX19LCJwcmYiOltdfQ",
+        "ftp://example.com",
+        "ssh://git@github.com"
+      ]
+    }
+  }
+}
